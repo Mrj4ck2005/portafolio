@@ -134,7 +134,7 @@ export default function WelcomeScreen() {
                 letterSpacing: '-0.05em',
               }}
             >
-              Bienvenido0000000000
+              Bienvenido
             </motion.span>
 
             {/* a mi */}
