@@ -40,7 +40,7 @@ export default function WelcomeScreen() {
           maxWidth: '320px',
         }}
       >
-        {/* ICONS */}
+        {/* ÍCONOS */}
         <motion.div
           initial="hidden"
           animate="visible"
@@ -101,7 +101,7 @@ export default function WelcomeScreen() {
           ))}
         </motion.div>
 
-        {/* TEXT */}
+        {/* TEXTO */}
         <div
           style={{
             display: 'flex',
@@ -119,7 +119,7 @@ export default function WelcomeScreen() {
               flexWrap: 'wrap',
             }}
           >
-            {/* Welcome */}
+            {/* Bienvenido */}
             <motion.span
               initial={{ opacity: 0, x: 120 }}
               animate={{ opacity: 1, x: 0 }}
@@ -134,10 +134,10 @@ export default function WelcomeScreen() {
                 letterSpacing: '-0.05em',
               }}
             >
-              Welcome
+              Bienvenido
             </motion.span>
 
-            {/* to my */}
+            {/* a mi */}
             <motion.span
               initial={{ opacity: 0, x: -120 }}
               animate={{ opacity: 1, x: 0 }}
@@ -152,11 +152,11 @@ export default function WelcomeScreen() {
                 letterSpacing: '-0.05em',
               }}
             >
-              to my
+              a mi
             </motion.span>
           </div>
 
-          {/* Portfolio */}
+          {/* Sitio web de portafolio */}
           <motion.h1
             initial={{ opacity: 0, y: 70 }}
             animate={{ opacity: 1, y: 0 }}
@@ -175,32 +175,32 @@ export default function WelcomeScreen() {
               whiteSpace: 'nowrap',
             }}
           >
-            Portfolio Website
+            Sitio Web de Portafolio
           </motion.h1>
         </div>
 
-        {/* DOMAIN CAPSULE */}
+        {/* CÁPSULA DE DOMINIO */}
         <motion.div
-  initial={{ opacity: 0, y: -40 }} // ⬅️ dari atas
-  animate={{ opacity: 1, y: 0 }}
-  transition={{
-    delay: 2.1,
-    duration: 1.6,
-    ease: [0.22, 1, 0.36, 1],
-  }}
-  style={{
-    padding: '6px 14px',
-    borderRadius: '999px',
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'rgba(255,255,255,0.04)',
-    backdropFilter: 'blur(10px)',
-    fontSize: '12px',
-    letterSpacing: '0.12em',
-    color: 'rgba(255,255,255,0.7)',
-  }}
->
-  www.rifqi.vercel.app
-</motion.div>
+          initial={{ opacity: 0, y: -40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: 2.1,
+            duration: 1.6,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          style={{
+            padding: '6px 14px',
+            borderRadius: '999px',
+            border: '1px solid rgba(255,255,255,0.12)',
+            background: 'rgba(255,255,255,0.04)',
+            backdropFilter: 'blur(10px)',
+            fontSize: '12px',
+            letterSpacing: '0.12em',
+            color: 'rgba(255,255,255,0.7)',
+          }}
+        >
+          Jack.rg
+        </motion.div>
       </motion.div>
     </div>
   )

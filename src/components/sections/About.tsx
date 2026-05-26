@@ -5,7 +5,7 @@ import { motion, Variants } from "framer-motion";
 import { Code, Award, Globe, FileText, ArrowUpRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
-/* ================== ANIMATION ================== */
+/* ================== ANIMACIÓN ================== */
 
 const container: Variants = {
   hidden: {},
@@ -55,7 +55,7 @@ const pop: Variants = {
   },
 };
 
-/* ================== COMPONENT ================== */
+/* ================== COMPONENTE ================== */
 
 export default function About() {
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
@@ -92,7 +92,15 @@ export default function About() {
     }
   };
 
-  const scrollToPortfolio = () => {
+  const scrollToPortfolio = (
+    tab: "projects" | "certificates" | "techstack"
+  ) => {
+    window.dispatchEvent(
+      new CustomEvent("changePortfolioTab", {
+        detail: tab,
+      })
+    );
+
     const el = document.getElementById("portfolio");
     if (el) {
       el.scrollIntoView({ behavior: "smooth" });
@@ -105,17 +113,20 @@ export default function About() {
     {
       icon: <Code size={16} />,
       value: String(projectCount),
-      title: "PROJECTS",
+      title: "PROYECTOS",
+      tab: "projects" as const,
     },
     {
       icon: <Award size={16} />,
       value: String(certificateCount),
-      title: "CERTIFICATES",
+      title: "CERTIFICADOS",
+      tab: "certificates" as const,
     },
     {
       icon: <Globe size={16} />,
       value: String(projectCount + certificateCount),
-      title: "COMPLETED WORKS",
+      title: "TRABAJOS COMPLETADOS",
+      tab: "techstack" as const,
     },
   ];
 
@@ -139,7 +150,7 @@ export default function About() {
             gap: "32px",
           }}
         >
-          {/* LEFT */}
+          {/* IZQUIERDA */}
           <motion.div
             variants={container}
             initial="hidden"
@@ -159,22 +170,23 @@ export default function About() {
                   letterSpacing: "0.2em",
                 }}
               >
-                ABOUT ME
+                SOBRE MÍ
               </span>
             </motion.div>
 
             <motion.div variants={fadeUp}>
               <div
+                className="hero-title-shine"
                 style={{
                   fontSize: isMobile ? 32 : "clamp(32px,5vw,46px)",
                   fontWeight: 800,
                   lineHeight: 1.03,
-                  color: "var(--text-primary)",
                 }}
               >
-                <div>Rifqi</div>
-                <div>Muhammad</div>
-                <div>Aliya</div>
+                <div>Jack</div>
+                <div>Anderson</div>
+                <div>Rosales</div>
+                <div>Garay</div>
               </div>
             </motion.div>
 
@@ -198,13 +210,13 @@ export default function About() {
                 maxWidth: isMobile ? "100%" : "490px",
               }}
             >
-              Fresh Graduate SMK Rekayasa Perangkat Lunak lulusan 2026 dengan
-              passion di bidang frontend development dan UI modern. Berfokus
-              pada pembuatan website clean, responsif, dan visual yang kuat
-              untuk menghadirkan pengalaman digital yang optimal.
+              Me apasiona crear soluciones digitales modernas,
+              combinando diseño, tecnología e interfaces limpias para construir
+              proyectos funcionales, atractivos y orientados a necesidades
+              reales.
             </motion.p>
 
-            {/* QUOTE */}
+            {/* FRASE */}
             <motion.div
               variants={{
                 hidden: { opacity: 0, scale: 0.94 },
@@ -229,11 +241,11 @@ export default function About() {
                 width: "fit-content",
               }}
             >
-              “Turning ideas into clean, modern, and meaningful digital
-              experiences.”
+              “Convirtiendo ideas en experiencias digitales limpias, modernas y
+              significativas.”
             </motion.div>
 
-            {/* BUTTONS */}
+            {/* BOTONES */}
             <motion.div
               variants={fadeUp}
               style={{
@@ -243,9 +255,9 @@ export default function About() {
                 flexWrap: "wrap",
               }}
             >
-              {/* DOWNLOAD CV */}
+              {/* DESCARGAR CV */}
               <a
-                href="https://drive.google.com/file/d/1cFqZ0TY0U0I51K0Tchv8E4sbOv5yAZ9x/view?usp=drive_link"
+                href="https://drive.google.com/file/d/10dZuBRJRUBYJ6gDXEa9etAIp_agNY3oi/view?usp=sharing"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ textDecoration: "none" }}
@@ -276,13 +288,13 @@ export default function About() {
                   }}
                 >
                   <FileText size={14} />
-                  Download CV
+                  Descargar CV
                 </button>
               </a>
 
-              {/* VIEW PROJECTS */}
+              {/* VER PROYECTOS */}
               <button
-                onClick={scrollToPortfolio}
+                onClick={() => scrollToPortfolio("projects")}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -308,13 +320,13 @@ export default function About() {
                 }}
               >
                 <ArrowUpRight size={14} />
-                View Projects
+                Ver proyectos
               </button>
             </motion.div>
           </motion.div>
 
-          {/* IMAGE */}
-          {!isMobile && (
+          {/* VIDEO DE PERFIL */}
+          
             <motion.div
               variants={slideLeft}
               initial="hidden"
@@ -327,30 +339,47 @@ export default function About() {
               }}
             >
               <div
-                style={{
-                  padding: 12,
-                  borderRadius: "50%",
-                  border: "1px solid var(--border)",
-                  transform: "translateX(-80px)",
-                }}
-              >
-                <img
-                  src="/assets/PP.png"
-                  alt="Profile"
+              style={{
+                padding: 12,
+                borderRadius: "50%",
+                border: "1px solid var(--border)",
+                transform: isMobile
+                ? "translateX(50px)" // Mueve el video un poco hacia la derecha solo en teléfono
+                : "translateX(-40px)", // Aleja un poco el video en escritorio
+               }}
+               >
+                <div
                   style={{
                     width: 240,
                     height: 240,
                     borderRadius: "50%",
-                    objectFit: "cover",
-                    display: "block",
+                    overflow: "hidden",
+                    background: "black",
                   }}
-                />
+                >
+                  <video
+                    src="/assets/pp.mp4"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="auto"
+                    aria-label="Video de perfil"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      display: "block",
+                    }}
+                  />
+                </div>
               </div>
             </motion.div>
-          )}
+          
         </div>
 
-        {/* CARDS */}
+        {/* TARJETAS */}
         <motion.div
           variants={container}
           initial="hidden"
@@ -413,17 +442,25 @@ export default function About() {
                 {item.title}
               </div>
 
-              <div
-                onClick={scrollToPortfolio}
+              <button
+                onClick={() => scrollToPortfolio(item.tab)}
+                aria-label={`Ir a ${item.title.toLowerCase()}`}
                 style={{
                   position: "absolute",
                   bottom: 14,
                   right: 14,
                   cursor: "pointer",
+                  background: "transparent",
+                  border: "none",
+                  color: "inherit",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
                 <ArrowUpRight size={15} />
-              </div>
+              </button>
             </motion.div>
           ))}
         </motion.div>

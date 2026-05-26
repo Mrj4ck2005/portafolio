@@ -4,3 +4,41 @@
   position: relative;
   overflow: hidden;
 }
+
+
+.hero-title-shine {
+  display: inline-block;
+
+  color: transparent;
+  background-image: linear-gradient(
+    110deg,
+    #f7f7f7 0%,
+    #e5e5e5 22%,
+    #ffffff 38%,
+    #c9c9c9 46%,
+    #ffffff 50%,
+    #dcdcdc 56%,
+    #ffffff 68%,
+    #f2f2f2 100%
+  );
+
+  background-size: 320% 100%;
+  background-position: 160% 0;
+  background-clip: text;
+  -webkit-background-clip: text;
+
+  animation: textShine 5.6s linear infinite;
+  filter:
+    drop-shadow(0 0 4px rgba(255, 255, 255, 0.18))
+    drop-shadow(0 0 12px rgba(255, 255, 255, 0.12));
+}
+
+@keyframes textShine {
+  0% {
+    background-position: 160% 0;
+  }
+
+  100% {
+    background-position: -160% 0;
+  }
+}

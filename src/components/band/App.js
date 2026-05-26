@@ -23,9 +23,11 @@ extend({ MeshLineGeometry, MeshLineMaterial });
 
 const GLTF_PATH = '/assets/kartu.glb';
 const TEXTURE_PATH = '/assets/bandd.png';
+const PHOTO_PATH = '/assets/PP.png';
 
 useGLTF.preload(GLTF_PATH);
 useTexture.preload(TEXTURE_PATH);
+
 
 export default function App() {
   const [isMobile, setIsMobile] = useState(false);

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import App from "@/components/band/App";
 import TextType from "@/components/band/TextType";
 
-const skills = ["Typescript", "React.js", "Tailwind"];
+const skills = ["TypeScript", "React.js", "Tailwind CSS"];
 
 type HeroProps = {
   showApp: boolean;
@@ -51,7 +51,7 @@ export default function Hero({ showApp }: HeroProps) {
         overflow: "hidden",
       }}
     >
-      {/* APP LAYER */}
+      {/* CAPA DE LA APP */}
       <div
         style={{
           position: "absolute",
@@ -63,7 +63,7 @@ export default function Hero({ showApp }: HeroProps) {
         {showApp && <App />}
       </div>
 
-      {/* TEXT */}
+      {/* TEXTO */}
       <div
         className="md:max-w-[600px]"
         style={{
@@ -72,7 +72,7 @@ export default function Hero({ showApp }: HeroProps) {
           zIndex: 5,
         }}
       >
-        {/* LABEL */}
+        {/* ETIQUETA */}
         <motion.div
           initial={false}
           animate={
@@ -92,11 +92,11 @@ export default function Hero({ showApp }: HeroProps) {
               textTransform: "uppercase",
             }}
           >
-            ✦ Available for work
+            ✦ Disponible para trabajar
           </span>
         </motion.div>
 
-        {/* HEADING */}
+        {/* TÍTULO */}
         <div>
           <motion.h1
             initial={false}
@@ -118,7 +118,7 @@ export default function Hero({ showApp }: HeroProps) {
               marginBottom: 0,
             }}
           >
-            Frontend
+            Desarrollador
           </motion.h1>
 
           <motion.h1
@@ -142,11 +142,11 @@ export default function Hero({ showApp }: HeroProps) {
               marginBottom: 24,
             }}
           >
-            Developer
+            Frontend
           </motion.h1>
         </div>
 
-        {/* STATUS */}
+        {/* ESTADO */}
         <motion.div
           initial={false}
           animate={startAnim ? { opacity: 1, x: 0 } : { opacity: 0, x: 40 }}
@@ -162,7 +162,12 @@ export default function Hero({ showApp }: HeroProps) {
             }}
           >
             <TextType
-              text={["Junior Programmer", "fresh Graduate", "Happy coding!"]}
+              text={[
+                "Jack Anderson Rosales Garay",
+                "Programador Junior",
+                "Desarrollador de Software",
+                "¡Creando soluciones digitales!",
+              ]}
               typingSpeed={75}
               pauseDuration={1500}
               showCursor
@@ -173,7 +178,7 @@ export default function Hero({ showApp }: HeroProps) {
           </span>
         </motion.div>
 
-        {/* DESC */}
+        {/* DESCRIPCIÓN */}
         <motion.div
           initial={false}
           animate={
@@ -185,7 +190,7 @@ export default function Hero({ showApp }: HeroProps) {
           style={{
             marginBottom: 28,
             width: "100%",
-            maxWidth: 460, // batas lebar biar jadi 3 baris
+            maxWidth: 460,
           }}
         >
           <p
@@ -197,13 +202,13 @@ export default function Hero({ showApp }: HeroProps) {
               textWrap: "pretty",
             }}
           >
-            Menciptakan website modern dengan tampilan clean, responsif, dan
-            elegan. Mengubah ide dan desain menjadi pengalaman digital yang
-            menarik dan mudah digunakan.
+               Creo soluciones web modernas enfocadas en diseño limpio, rendimiento y
+               facilidad de uso. Mi objetivo es transformar cada idea en una experiencia
+               digital funcional, visualmente atractiva y adaptable a cualquier pantalla.
           </p>
         </motion.div>
 
-        {/* SKILLS */}
+        {/* HABILIDADES */}
         <motion.div
           initial="hidden"
           animate={startAnim ? "visible" : "hidden"}
@@ -246,7 +251,7 @@ export default function Hero({ showApp }: HeroProps) {
           ))}
         </motion.div>
 
-        {/* FOOTER */}
+        {/* PIE DE TEXTO */}
         <motion.div
           initial={false}
           animate={startAnim ? { opacity: 1, y: 0 } : { opacity: 0, y: 25 }}
@@ -264,7 +269,7 @@ export default function Hero({ showApp }: HeroProps) {
               color: "var(--text-muted)",
             }}
           >
-            ↓ explore my work below
+            ↓ Explora mis proyectos abajo
           </span>
 
           <span
@@ -274,11 +279,12 @@ export default function Hero({ showApp }: HeroProps) {
               color: "var(--text-muted)",
             }}
           >
-            ↗ open to full-time & freelance opportunities
+            ↗ Disponible para oportunidades freelance y proyectos digitales
           </span>
         </motion.div>
       </div>
-      {/* SCROLL INDICATOR */}
+
+      {/* INDICADOR DE DESPLAZAMIENTO */}
       <motion.div
         initial={false}
         animate={startAnim ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
@@ -296,56 +302,56 @@ export default function Hero({ showApp }: HeroProps) {
           pointerEvents: "none",
         }}
       >
-        {/* SCROLL INDICATOR */}
-<motion.div
-  initial={false}
-  animate={
-    startAnim
-      ? { opacity: 1, y: 0 }
-      : { opacity: 0, y: 40 }
-  }
-  transition={{
-    duration: 0.9,
-    delay: 1.2,
-    ease: [0.22, 1, 0.36, 1],
-  }}
-  className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none w-full flex justify-center"
->
-  <motion.div
-    animate={{
-      y: [0, 6, 0],
-      opacity: [1, 0.65, 1],
-    }}
-    transition={{
-      duration: 1.4,
-      repeat: Infinity,
-      ease: 'easeInOut',
-    }}
-    className="flex items-center justify-center gap-2"
-  >
-    <span
-      style={{
-        fontFamily: "'DM Mono', monospace",
-        fontSize: 11,
-        letterSpacing: '0.2em',
-        textTransform: 'uppercase',
-        color: 'var(--text-muted)',
-      }}
-    >
-      Scroll
-    </span>
+        {/* INDICADOR DE DESPLAZAMIENTO */}
+        <motion.div
+          initial={false}
+          animate={
+            startAnim
+              ? { opacity: 1, y: 0 }
+              : { opacity: 0, y: 40 }
+          }
+          transition={{
+            duration: 0.9,
+            delay: 1.2,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none w-full flex justify-center"
+        >
+          <motion.div
+            animate={{
+              y: [0, 6, 0],
+              opacity: [1, 0.65, 1],
+            }}
+            transition={{
+              duration: 1.4,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="flex items-center justify-center gap-2"
+          >
+            <span
+              style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: 11,
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: "var(--text-muted)",
+              }}
+            >
+              Desliza
+            </span>
 
-    <span
-      style={{
-        fontSize: 16,
-        color: 'var(--text-secondary)',
-        lineHeight: 1,
-      }}
-    >
-      ↓
-    </span>
-  </motion.div>
-</motion.div>
+            <span
+              style={{
+                fontSize: 16,
+                color: "var(--text-secondary)",
+                lineHeight: 1,
+              }}
+            >
+              ↓
+            </span>
+          </motion.div>
+        </motion.div>
       </motion.div>
     </section>
   );

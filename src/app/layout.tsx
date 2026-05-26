@@ -1,8 +1,8 @@
 import "./globals.css";
-import RefreshRedirect from '@/components/RefreshRedirect'
+import RefreshRedirect from "@/components/RefreshRedirect";
 
 export const metadata = {
-  title: "Rifqi Muhammad Aliya",
+  title: "Jack Anderson Rosales Garay",
   description: "Portfolio...",
 };
 
@@ -12,11 +12,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <RefreshRedirect />
         {children}
-        </body>
+      </body>
     </html>
   );
 }

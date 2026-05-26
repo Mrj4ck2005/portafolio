@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { motion, Variants } from 'framer-motion'
 import {
   Send,
@@ -16,6 +17,8 @@ import {
   FaYoutube,
   FaTiktok,
 } from 'react-icons/fa'
+
+import { supabase } from '@/lib/supabase'
 
 const smoothEase: [number, number, number, number] = [
   0.22,
@@ -44,29 +47,68 @@ const socialLinks = [
     title: 'Instagram',
     user: '@instagram',
     icon: FaInstagram,
-    link: 'https://www.instagram.com/itsmeikky_12?igsh=ZHFpMTJ1bHQzeDAx',
+    link: 'https://www.instagram.com/jackrosalesgaray/?hl=es',
   },
   {
     title: 'Youtube',
     user: '@youtube',
     icon: FaYoutube,
-    link: 'https://youtube.com/@zettaajah?si=QRjJGD4zCQG8aIHX',
+    link: 'https://youtube.com/',
   },
   {
     title: 'Github',
     user: '@github',
     icon: FaGithub,
-    link: 'https://github.com/RifqiMuhammadAliya12',
+    link: 'https://github.com/Mrj4ck2005',
   },
   {
     title: 'TikTok',
     user: '@tiktok',
     icon: FaTiktok,
-    link: 'https://www.tiktok.com/@itsme.ikky_?_r=1&_t=ZS-95yAYr5PHUb',
+    link: 'https://tinyurl.com/y97uv62w',
   },
 ]
 
 export default function ContactForm() {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      setStatus('Completa todos los campos.')
+      return
+    }
+
+    setLoading(true)
+    setStatus('')
+
+    const { error } = await supabase.from('contact_messages').insert([
+      {
+        name,
+        email,
+        message,
+      },
+    ])
+
+    setLoading(false)
+
+    if (error) {
+      console.error(error)
+      setStatus('No se pudo enviar el mensaje.')
+      return
+    }
+
+    setName('')
+    setEmail('')
+    setMessage('')
+    setStatus('Mensaje enviado correctamente.')
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -40 }}
@@ -75,7 +117,6 @@ export default function ContactForm() {
       viewport={{ once: false, amount: 0.2 }}
       className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5 md:p-8 flex flex-col h-full"
     >
-      {/* HEADER */}
       <motion.div
         variants={fieldVariants}
         initial="hidden"
@@ -84,18 +125,16 @@ export default function ContactForm() {
         transition={{ delay: 0.05 }}
       >
         <h2 className="text-2xl md:text-3xl font-bold mb-3">
-          Hubungi Saya
+          Contacta conmigo
         </h2>
 
         <p className="text-sm text-white/50 mb-7">
-          Feel free to reach out if you want to collaborate,
-          discuss ideas, or simply say hello.
+          No dudes en ponerte en contacto conmigo si quieres colaborar,
+          intercambiar ideas o simplemente saludar.
         </p>
       </motion.div>
 
-      {/* FORM */}
-      <div className="space-y-4">
-        {/* NAME */}
+      <form onSubmit={handleSubmit} className="space-y-4">
         <motion.div
           variants={fieldVariants}
           initial="hidden"
@@ -107,13 +146,15 @@ export default function ContactForm() {
             <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
 
             <input
-              placeholder="Your Name"
+              type="text"
+              placeholder="Su nombre"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               className="w-full rounded-2xl border border-white/15 bg-black/20 pl-12 pr-4 py-4 outline-none transition duration-200 focus:border-white focus:ring-1 focus:ring-white/40"
             />
           </div>
         </motion.div>
 
-        {/* EMAIL */}
         <motion.div
           variants={fieldVariants}
           initial="hidden"
@@ -125,13 +166,18 @@ export default function ContactForm() {
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
 
             <input
-              placeholder="Your Email"
-              className="w-full rounded-2xl border border-white/15 bg-black/20 pl-12 pr-4 py-4 outline-none transition duration-200 focus:border-white focus:ring-1 focus:ring-white/40"
-            />
+  type="email"
+  placeholder="Tu correo electrónico"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+  autoComplete="off"
+  spellCheck={false}
+  suppressHydrationWarning
+  className="w-full rounded-2xl border border-white/15 bg-black/20 pl-12 pr-4 py-4 outline-none transition duration-200 focus:border-white focus:ring-1 focus:ring-white/40"
+/>
           </div>
         </motion.div>
 
-        {/* MESSAGE */}
         <motion.div
           variants={fieldVariants}
           initial="hidden"
@@ -144,32 +190,40 @@ export default function ContactForm() {
 
             <textarea
               rows={5}
-              placeholder="Your Message"
+              placeholder="Tu mensaje"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
               className="w-full rounded-2xl border border-white/15 bg-black/20 pl-12 pr-4 py-4 outline-none resize-none transition duration-200 focus:border-white focus:ring-1 focus:ring-white/40"
             />
           </div>
         </motion.div>
 
-        {/* BUTTON */}
         <motion.button
+          type="submit"
+          disabled={loading}
           variants={fieldVariants}
           initial="hidden"
           whileInView="show"
           viewport={{ once: false }}
           transition={{ delay: 0.28 }}
           whileHover={{
-            scale: 1.06,
+            scale: loading ? 1 : 1.06,
             transition: { duration: 0.12 },
           }}
-          whileTap={{ scale: 0.97 }}
-          className="w-full rounded-2xl py-4 bg-white/10 border border-white/10 flex items-center justify-center gap-2"
+          whileTap={{ scale: loading ? 1 : 0.97 }}
+          className="w-full rounded-2xl py-4 bg-white/10 border border-white/10 flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Send size={16} />
-          Send Message
+          {loading ? 'Enviando...' : 'Enviar mensaje'}
         </motion.button>
-      </div>
 
-      {/* SOCIAL */}
+        {status && (
+          <p className="text-sm text-white/60 text-center">
+            {status}
+          </p>
+        )}
+      </form>
+
       <div className="border-t border-white/10 pt-5 mt-6">
         <motion.p
           variants={fieldVariants}
@@ -179,12 +233,11 @@ export default function ContactForm() {
           transition={{ delay: 0.34 }}
           className="text-sm text-white/55 mb-4"
         >
-          Connect With Me
+          Conéctate conmigo
         </motion.p>
 
-        {/* LINKEDIN */} 
         <motion.a
-          href="https://www.linkedin.com/in/rifqimuhammadaliya/"  
+          href="https://www.linkedin.com/"
           target="_blank"
           rel="noopener noreferrer"
           variants={fieldVariants}
@@ -216,7 +269,6 @@ export default function ContactForm() {
           </div>
         </motion.a>
 
-        {/* GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {socialLinks.map((item, i) => {
             const Icon = item.icon

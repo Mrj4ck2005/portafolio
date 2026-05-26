@@ -10,7 +10,7 @@ export default function Navbar() {
   const [activeSection, setActiveSection] = useState('home')
   const [mounted, setMounted] = useState(false)
 
-  // 🔥 navbar muncul sekali aja
+  // El navbar aparece solo una vez
   const [showNavbar, setShowNavbar] = useState(false)
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function Navbar() {
     }
   }, [])
 
-  // 🔥 navbar animasi cuma pas refresh
+  // La animación del navbar solo se ejecuta al actualizar la página
   useEffect(() => {
     const navbarPlayed = sessionStorage.getItem('navbarPlayed')
 
@@ -84,7 +84,7 @@ export default function Navbar() {
 
     const startPosition = window.scrollY
     const distance = targetPosition - startPosition
-    const duration = 1200
+    const duration = 300
 
     let startTime: number | null = null
 
@@ -116,10 +116,10 @@ export default function Navbar() {
   }
 
   const navItems = [
-    { label: 'Home', id: 'home' },
-    { label: 'About', id: 'about' },
-    { label: 'Portfolio', id: 'portfolio' },
-    { label: 'Contact', id: 'contact' },
+    { label: 'Inicio', id: 'home' },
+    { label: 'Sobre mí', id: 'about' },
+    { label: 'Portafolio', id: 'portfolio' },
+    { label: 'Contacto', id: 'contact' },
   ]
 
   return (
@@ -164,7 +164,7 @@ export default function Navbar() {
             letterSpacing: '0.1em',
           }}
         >
-          rifqi.dev
+          JackAnderson.dev
         </span>
 
         {!isMobile && (

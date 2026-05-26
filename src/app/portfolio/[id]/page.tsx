@@ -20,15 +20,50 @@ import {
   Box,
 } from 'lucide-react'
 
+const toArray = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item).trim())
+      .filter(Boolean)
+  }
+
+  if (typeof value === 'string') {
+    const cleanValue = value.trim()
+
+    if (!cleanValue) return []
+
+    try {
+      const parsed = JSON.parse(cleanValue)
+
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((item) => String(item).trim())
+          .filter(Boolean)
+      }
+    } catch {
+      // Si no es JSON, continúa como texto normal separado por comas
+    }
+
+    return cleanValue
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+  }
+
+  return []
+}
+
 export default function PortfolioDetailPage() {
-  const { id } = useParams()
+  const params = useParams()
   const router = useRouter()
+
+  const id = params?.id as string
 
   const [project, setProject] = useState<any>({
     title: '',
     description: '',
-    technologies: '',
-    key_features: '',
+    technologies: [],
+    key_features: [],
     image_url: '',
     image_urls: [],
     live_url: '',
@@ -37,35 +72,44 @@ export default function PortfolioDetailPage() {
 
   const [currentImage, setCurrentImage] = useState(0)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchProject()
-  }, [])
+    if (id) {
+      fetchProject()
+    }
+  }, [id])
 
   const fetchProject = async () => {
-    const { data } = await supabase
+    setLoading(true)
+
+    const { data, error } = await supabase
       .from('projects')
       .select('*')
       .eq('id', id)
       .single()
 
+    if (error) {
+      console.error('Error fetching project:', error)
+      setLoading(false)
+      return
+    }
+
     if (data) {
       setProject(data)
+      setCurrentImage(0)
     }
+
+    setLoading(false)
   }
 
-  const tech = (project?.technologies || '')
-    .split(',')
-    .filter((t: string) => t.trim() !== '')
+  const tech = toArray(project?.technologies)
+  const features = toArray(project?.key_features)
 
-  const features = (project?.key_features || '')
-    .split(',')
-    .filter((f: string) => f.trim() !== '')
-
-  const galleryImages =
-    project?.image_urls && Array.isArray(project.image_urls)
-      ? project.image_urls
-      : project?.image_url
+  const galleryImagesFromArray = toArray(project?.image_urls)
+  const galleryImages = galleryImagesFromArray.length > 0
+    ? galleryImagesFromArray
+    : project?.image_url
       ? [project.image_url]
       : []
 
@@ -86,10 +130,18 @@ export default function PortfolioDetailPage() {
     router.push('/#portfolio')
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <p className="text-white/60 text-sm">Cargando proyecto...</p>
+      </div>
+    )
+  }
+
   return (
     <>
       <AnimatePresence>
-        {previewOpen && (
+        {previewOpen && galleryImages.length > 0 && (
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
@@ -126,6 +178,7 @@ export default function PortfolioDetailPage() {
                 ease: [0.22, 1, 0.36, 1],
               }}
               src={galleryImages[currentImage]}
+              alt={project.title || 'Project image'}
               className="max-w-[85vw] max-h-[80vh] rounded-3xl object-contain"
             />
 
@@ -191,7 +244,7 @@ export default function PortfolioDetailPage() {
                 }}
                 className="text-[28px] md:text-[38px] font-bold leading-tight tracking-tight mb-3"
               >
-                {project.title}
+                {project.title || 'Sin título'}
               </motion.h1>
 
               <motion.div
@@ -216,7 +269,7 @@ export default function PortfolioDetailPage() {
               }}
               className="text-[12px] leading-6 text-white/60 text-justify mb-7"
             >
-              {project.description}
+              {project.description || 'Sin descripción disponible.'}
             </motion.p>
 
             {/* STATS */}
@@ -276,6 +329,7 @@ export default function PortfolioDetailPage() {
                 <a
                   href={project.live_url}
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-br from-[#111] to-[#181818] border border-white/10 hover:bg-white/5 hover:border-white/20 transition-all duration-300 text-sm"
                 >
                   <ExternalLink size={14} />
@@ -292,6 +346,7 @@ export default function PortfolioDetailPage() {
                 <a
                   href={project.github_url}
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-br from-[#111] to-[#181818] border border-white/10 hover:bg-white/5 hover:border-white/20 transition-all duration-300 text-sm"
                 >
                   <GitBranch size={14} />
@@ -306,54 +361,59 @@ export default function PortfolioDetailPage() {
             </motion.div>
 
             {/* TECH */}
-            {/* TECH */}
-<motion.div
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{
-    duration: 0.8,
-    delay: 0.08,
-    ease: [0.22, 1, 0.36, 1],
-  }}
->
-  <div className="flex items-center gap-2 mb-3">
-    <Code2 size={14} className="text-white/70" />
-    <p className="text-[13px] font-semibold">
-      Technologies Used
-    </p>
-  </div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{
+                duration: 0.8,
+                delay: 0.08,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Code2 size={14} className="text-white/70" />
+                <p className="text-[13px] font-semibold">
+                  Technologies Used
+                </p>
+              </div>
 
-  <div className="flex flex-wrap gap-2">
-  {tech.map((t: string, i: number) => (
-    <motion.div
-  key={i}
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{
-    delay: 0.12 + i * 0.04,
-    duration: 0.5,
-    ease: [0.22, 1, 0.36, 1],
-  }}
-  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-br from-[#101010] to-[#181818] border border-white/10 text-[11px] text-white/75"
->
-  <Box size={11} className="text-white/40" />
-  {t.trim()}
-</motion.div>
-  ))}
-</div>
-</motion.div>
+              <div className="flex flex-wrap gap-2">
+                {tech.length > 0 ? (
+                  tech.map((t: string, i: number) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{
+                        delay: 0.12 + i * 0.04,
+                        duration: 0.5,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-br from-[#101010] to-[#181818] border border-white/10 text-[11px] text-white/75"
+                    >
+                      <Box size={11} className="text-white/40" />
+                      {t}
+                    </motion.div>
+                  ))
+                ) : (
+                  <p className="text-[12px] text-white/40">
+                    Sin tecnologías registradas.
+                  </p>
+                )}
+              </div>
+            </motion.div>
           </motion.div>
 
           {/* RIGHT */}
-<motion.div
-  initial={{ opacity: 0, x: 80 }}
-  animate={{ opacity: 1, x: 0 }}
-  transition={{
-    duration: 1,
-    ease: [0.22, 1, 0.36, 1],
-  }}
-  className="w-full pt-10 md:pt-14"
->
+          <motion.div
+            initial={{ opacity: 0, x: 80 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{
+              duration: 1,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            className="w-full pt-10 md:pt-14"
+          >
             {/* IMAGE */}
             {galleryImages.length > 0 && (
               <motion.div
@@ -376,6 +436,7 @@ export default function PortfolioDetailPage() {
                       ease: [0.22, 1, 0.36, 1],
                     }}
                     src={galleryImages[currentImage]}
+                    alt={project.title || 'Project image'}
                     onClick={() => setPreviewOpen(true)}
                     className="w-full h-[220px] md:h-[250px] object-cover cursor-pointer"
                   />
@@ -447,28 +508,34 @@ export default function PortfolioDetailPage() {
               </div>
 
               <ul className="space-y-2.5 text-[12px] text-white/65 leading-6">
-                {features.map((f: string, i: number) => (
-                  <motion.li
-                    key={i}
-                    initial={{
-                      opacity: 0,
-                      x: i % 2 === 0 ? 30 : -30,
-                    }}
-                    animate={{
-                      opacity: 1,
-                      x: 0,
-                    }}
-                    transition={{
-                      delay: i * 0.05,
-                      duration: 0.55,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                    className="flex gap-3"
-                  >
-                    <span className="text-white/35">•</span>
-                    <span>{f.trim()}</span>
-                  </motion.li>
-                ))}
+                {features.length > 0 ? (
+                  features.map((f: string, i: number) => (
+                    <motion.li
+                      key={i}
+                      initial={{
+                        opacity: 0,
+                        x: i % 2 === 0 ? 30 : -30,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        x: 0,
+                      }}
+                      transition={{
+                        delay: i * 0.05,
+                        duration: 0.55,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                      className="flex gap-3"
+                    >
+                      <span className="text-white/35">•</span>
+                      <span>{f}</span>
+                    </motion.li>
+                  ))
+                ) : (
+                  <li className="text-white/40">
+                    Sin características registradas.
+                  </li>
+                )}
               </ul>
             </motion.div>
           </motion.div>
