@@ -22,27 +22,27 @@ export default function Sidebar() {
 
   const menus = [
     {
-      name: "Dashboard",
+      name: "Panel",
       icon: LayoutDashboard,
       path: "/admin/dashboard",
     },
     {
-      name: "Projects",
+      name: "Proyectos",
       icon: Folder,
       path: "/admin/projects",
     },
     {
-      name: "Certificates",
+      name: "Certificados",
       icon: Award,
       path: "/admin/certificates",
     },
     {
-      name: "Comments",
+      name: "Comentarios",
       icon: MessageSquare,
       path: "/admin/comments",
     },
     {
-      name: "Tech Stack",
+      name: "Tecnologías",
       icon: Layers,
       path: "/admin/tech",
     },
@@ -74,7 +74,7 @@ export default function Sidebar() {
       <div>
         {!hideTitle && (
           <h1 className="text-lg font-semibold mb-8 tracking-wide text-white">
-            Admin Panel
+            Panel de Administración
           </h1>
         )}
 
@@ -149,7 +149,7 @@ export default function Sidebar() {
 
       {/* BOTTOM */}
       <div className="text-xs text-white/35 tracking-wide">
-        © 2026 Admin
+        © 2026 Administración
       </div>
     </>
   );
@@ -169,7 +169,7 @@ export default function Sidebar() {
           {/* TOP BAR */}
           <div className="fixed top-0 left-0 right-0 h-[70px] bg-black/95 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-5 z-[60]">
             <h1 className="text-white font-semibold text-base">
-              Admin Panel
+              Panel de Administración
             </h1>
 
             <button
@@ -208,7 +208,7 @@ export default function Sidebar() {
                   {/* HEADER */}
                   <div className="flex items-center justify-between mb-8">
                     <h1 className="text-lg font-semibold text-white">
-                      Admin Panel
+                      Panel de Administración
                     </h1>
 
                     <button
