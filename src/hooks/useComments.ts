@@ -27,7 +27,7 @@ export default function useComments() {
         },
         async () => {
           const data = await fetchCommentsService()
-          setComments(data)
+          setComments(data || [])
         }
       )
       .subscribe()
@@ -40,7 +40,7 @@ export default function useComments() {
   const fetchInitialComments = async () => {
     try {
       const data = await fetchCommentsService()
-      setComments(data)
+      setComments(data || [])
     } catch (err) {
       console.log(err)
     }
@@ -73,8 +73,9 @@ export default function useComments() {
         imageUrl,
       })
 
-      // instant UI update (tanpa nunggu realtime)
-      setComments((prev) => [newComment, ...prev])
+      if (newComment) {
+        setComments((prev) => [newComment, ...prev])
+      }
     } catch (err) {
       console.log(err)
     } finally {
@@ -93,7 +94,7 @@ export default function useComments() {
     try {
       const newLikes = await likeCommentService(
         id,
-        currentLikes
+        currentLikes || 0
       )
 
       localStorage.setItem(`liked-${id}`, 'true')
@@ -101,7 +102,10 @@ export default function useComments() {
       setComments((prev) =>
         prev.map((item) =>
           item.id === id
-            ? { ...item, likes: newLikes }
+            ? {
+                ...item,
+                likes: newLikes,
+              }
             : item
         )
       )
