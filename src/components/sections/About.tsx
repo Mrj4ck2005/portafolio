@@ -62,6 +62,7 @@ export default function About() {
 
   const [projectCount, setProjectCount] = useState(0);
   const [certificateCount, setCertificateCount] = useState(0);
+  const [techCount, setTechCount] = useState(0);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -84,11 +85,17 @@ export default function About() {
         .from("certificates")
         .select("*", { count: "exact", head: true });
 
+      const { count: technologies } = await supabase
+        .from("tech_stack")
+        .select("*", { count: "exact", head: true });
+
       setProjectCount(projects || 0);
       setCertificateCount(certificates || 0);
+      setTechCount(technologies || 0);
     } catch {
       setProjectCount(0);
       setCertificateCount(0);
+      setTechCount(0);
     }
   };
 
@@ -124,8 +131,8 @@ export default function About() {
     },
     {
       icon: <Globe size={16} />,
-      value: String(projectCount + certificateCount),
-      title: "TRABAJOS COMPLETADOS",
+      value: String(techCount),
+      title: "TECNOLOGÍAS",
       tab: "techstack" as const,
     },
   ];
@@ -326,57 +333,55 @@ export default function About() {
           </motion.div>
 
           {/* VIDEO DE PERFIL */}
-          
-            <motion.div
-              variants={slideLeft}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: false }}
-              style={{
-                width: "48%",
-                display: "flex",
-                justifyContent: "flex-end",
-              }}
-            >
-              <div
+          <motion.div
+            variants={slideLeft}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: false }}
+            style={{
+              width: "48%",
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+          >
+            <div
               style={{
                 padding: 12,
                 borderRadius: "50%",
                 border: "1px solid var(--border)",
                 transform: isMobile
-                ? "translateX(50px)" // Mueve el video un poco hacia la derecha solo en teléfono
-                : "translateX(-40px)", // Aleja un poco el video en escritorio
-               }}
-               >
-                <div
+                  ? "translateX(50px)"
+                  : "translateX(-40px)",
+              }}
+            >
+              <div
+                style={{
+                  width: 240,
+                  height: 240,
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  background: "black",
+                }}
+              >
+                <video
+                  src="/assets/pp.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
+                  aria-label="Video de perfil"
                   style={{
-                    width: 240,
-                    height: 240,
+                    width: "100%",
+                    height: "100%",
                     borderRadius: "50%",
-                    overflow: "hidden",
-                    background: "black",
+                    objectFit: "cover",
+                    display: "block",
                   }}
-                >
-                  <video
-                    src="/assets/pp.mp4"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload="auto"
-                    aria-label="Video de perfil"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                      display: "block",
-                    }}
-                  />
-                </div>
+                />
               </div>
-            </motion.div>
-          
+            </div>
+          </motion.div>
         </div>
 
         {/* TARJETAS */}
@@ -397,6 +402,7 @@ export default function About() {
               key={i}
               variants={pop}
               whileHover={{ scale: 1.03 }}
+              onClick={() => scrollToPortfolio(item.tab)}
               style={{
                 position: "relative",
                 padding: 18,
@@ -443,7 +449,10 @@ export default function About() {
               </div>
 
               <button
-                onClick={() => scrollToPortfolio(item.tab)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  scrollToPortfolio(item.tab);
+                }}
                 aria-label={`Ir a ${item.title.toLowerCase()}`}
                 style={{
                   position: "absolute",
