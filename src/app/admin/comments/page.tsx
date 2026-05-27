@@ -11,6 +11,9 @@ import {
   MessageSquare,
   RefreshCcw,
   Send,
+  Pencil,
+  Save,
+  X,
 } from "lucide-react";
 
 type Reply = {
@@ -22,8 +25,16 @@ type Reply = {
 export default function AdminCommentsPage() {
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [replyText, setReplyText] = useState<Record<number, string>>({});
   const [sendingReply, setSendingReply] = useState<Record<number, boolean>>({});
+
+  const [editingReply, setEditingReply] = useState<{
+    commentId: number;
+    replyIndex: number;
+  } | null>(null);
+
+  const [editReplyText, setEditReplyText] = useState("");
 
   useEffect(() => {
     fetchComments();
@@ -70,6 +81,47 @@ export default function AdminCommentsPage() {
     }
 
     setLoading(false);
+  };
+
+  const getReplies = (comment: any): Reply[] => {
+    return Array.isArray(comment.replies) ? comment.replies : [];
+  };
+
+  const updateRepliesInSupabase = async (
+    commentId: number,
+    updatedReplies: Reply[]
+  ) => {
+    const { error } = await supabase
+      .from("comments")
+      .update({
+        replies: updatedReplies,
+      })
+      .eq("id", commentId);
+
+    if (error) {
+      Swal.fire({
+        title: "Error",
+        text: "No se pudieron actualizar las respuestas. Revisa los permisos RLS o la columna replies.",
+        icon: "error",
+        background: "#0f0f0f",
+        color: "#fff",
+      });
+
+      return false;
+    }
+
+    setComments((prev) =>
+      prev.map((item) =>
+        item.id === commentId
+          ? {
+              ...item,
+              replies: updatedReplies,
+            }
+          : item
+      )
+    );
+
+    return true;
   };
 
   const deleteComment = async (id: number) => {
@@ -203,9 +255,7 @@ export default function AdminCommentsPage() {
 
     if (!target) return;
 
-    const oldReplies: Reply[] = Array.isArray(target.replies)
-      ? target.replies
-      : [];
+    const oldReplies = getReplies(target);
 
     const newReply: Reply = {
       username: "Administrador",
@@ -220,44 +270,138 @@ export default function AdminCommentsPage() {
       [commentId]: true,
     }));
 
-    const { error } = await supabase
-      .from("comments")
-      .update({
-        replies: updatedReplies,
-      })
-      .eq("id", commentId);
+    const success = await updateRepliesInSupabase(commentId, updatedReplies);
 
     setSendingReply((prev) => ({
       ...prev,
       [commentId]: false,
     }));
 
-    if (error) {
+    if (!success) return;
+
+    setReplyText((prev) => ({
+      ...prev,
+      [commentId]: "",
+    }));
+
+    Swal.fire({
+      title: "Respuesta enviada",
+      text: "La respuesta se guardó correctamente.",
+      icon: "success",
+      timer: 1400,
+      showConfirmButton: false,
+      background: "#0f0f0f",
+      color: "#fff",
+    });
+  };
+
+  const startEditReply = (
+    commentId: number,
+    replyIndex: number,
+    currentMessage: string
+  ) => {
+    setEditingReply({
+      commentId,
+      replyIndex,
+    });
+
+    setEditReplyText(currentMessage || "");
+  };
+
+  const cancelEditReply = () => {
+    setEditingReply(null);
+    setEditReplyText("");
+  };
+
+  const saveEditedReply = async (commentId: number, replyIndex: number) => {
+    if (!editReplyText.trim()) {
       Swal.fire({
-        title: "Error",
-        text: "No se pudo enviar la respuesta. Revisa si existe la columna replies y los permisos RLS.",
-        icon: "error",
+        title: "Campo vacío",
+        text: "La respuesta no puede quedar vacía.",
+        icon: "warning",
         background: "#0f0f0f",
         color: "#fff",
       });
       return;
     }
 
-    setComments((prev) =>
-      prev.map((item) =>
-        item.id === commentId
-          ? {
-              ...item,
-              replies: updatedReplies,
-            }
-          : item
-      )
+    const target = comments.find((item) => item.id === commentId);
+
+    if (!target) return;
+
+    const replies = getReplies(target);
+
+    const updatedReplies = replies.map((reply, index) =>
+      index === replyIndex
+        ? {
+            ...reply,
+            message: editReplyText.trim(),
+          }
+        : reply
     );
 
-    setReplyText((prev) => ({
-      ...prev,
-      [commentId]: "",
-    }));
+    const success = await updateRepliesInSupabase(commentId, updatedReplies);
+
+    if (!success) return;
+
+    cancelEditReply();
+
+    Swal.fire({
+      title: "Respuesta actualizada",
+      text: "La respuesta fue editada correctamente.",
+      icon: "success",
+      timer: 1400,
+      showConfirmButton: false,
+      background: "#0f0f0f",
+      color: "#fff",
+    });
+  };
+
+  const deleteReply = async (commentId: number, replyIndex: number) => {
+    const result = await Swal.fire({
+      title: "¿Eliminar respuesta?",
+      text: "Solo se eliminará esta respuesta del administrador.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+      background: "#0f0f0f",
+      color: "#fff",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#27272a",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    const target = comments.find((item) => item.id === commentId);
+
+    if (!target) return;
+
+    const replies = getReplies(target);
+
+    const updatedReplies = replies.filter((_, index) => index !== replyIndex);
+
+    const success = await updateRepliesInSupabase(commentId, updatedReplies);
+
+    if (!success) return;
+
+    if (
+      editingReply?.commentId === commentId &&
+      editingReply?.replyIndex === replyIndex
+    ) {
+      cancelEditReply();
+    }
+
+    Swal.fire({
+      title: "Respuesta eliminada",
+      text: "La respuesta fue eliminada correctamente.",
+      icon: "success",
+      timer: 1400,
+      showConfirmButton: false,
+      background: "#0f0f0f",
+      color: "#fff",
+    });
   };
 
   const formatDate = (date?: string) => {
@@ -296,7 +440,7 @@ export default function AdminCommentsPage() {
               </h1>
 
               <p className="text-sm text-white/40 mt-1">
-                Administra los comentarios de tu portafolio
+                Administra comentarios, respuestas, fijados y corazones de tu portafolio
               </p>
             </div>
 
@@ -322,9 +466,7 @@ export default function AdminCommentsPage() {
               </div>
             ) : (
               comments.map((comment) => {
-                const replies: Reply[] = Array.isArray(comment.replies)
-                  ? comment.replies
-                  : [];
+                const replies = getReplies(comment);
 
                 return (
                   <div
@@ -370,6 +512,8 @@ export default function AdminCommentsPage() {
                             <span>{comment.likes || 0} corazones</span>
 
                             <span>{formatDate(comment.created_at)}</span>
+
+                            <span>{replies.length} respuestas</span>
                           </div>
                         </div>
 
@@ -435,66 +579,107 @@ export default function AdminCommentsPage() {
                           </p>
 
                           <div className="space-y-3">
-                            {replies.map((reply, index) => (
-                              <div
-                                key={index}
-                                className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3"
-                              >
-                                <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                                  <p className="text-[12px] font-medium text-white/80">
-                                    {reply.username || "Administrador"}
-                                  </p>
+                            {replies.map((reply, index) => {
+                              const isEditing =
+                                editingReply?.commentId === comment.id &&
+                                editingReply?.replyIndex === index;
 
-                                  <span className="text-[10px] text-white/30">
-                                    {formatDateTime(reply.created_at)}
-                                  </span>
+                              return (
+                                <div
+                                  key={index}
+                                  className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3"
+                                >
+                                  <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                                    <div>
+                                      <p className="text-[12px] font-medium text-white/80">
+                                        {reply.username || "Administrador"}
+                                      </p>
+
+                                      <span className="text-[10px] text-white/30">
+                                        {formatDateTime(reply.created_at)}
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                      {isEditing ? (
+                                        <>
+                                          <button
+                                            onClick={() =>
+                                              saveEditedReply(comment.id, index)
+                                            }
+                                            title="Guardar respuesta"
+                                            className="w-8 h-8 rounded-xl bg-green-500/10 border border-green-500/20 text-green-300 hover:bg-green-500/20 transition flex items-center justify-center"
+                                          >
+                                            <Save size={13} />
+                                          </button>
+
+                                          <button
+                                            onClick={cancelEditReply}
+                                            title="Cancelar edición"
+                                            className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition flex items-center justify-center"
+                                          >
+                                            <X size={13} />
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <button
+                                            onClick={() =>
+                                              startEditReply(
+                                                comment.id,
+                                                index,
+                                                reply.message
+                                              )
+                                            }
+                                            title="Editar respuesta"
+                                            className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition flex items-center justify-center"
+                                          >
+                                            <Pencil size={13} />
+                                          </button>
+
+                                          <button
+                                            onClick={() =>
+                                              deleteReply(comment.id, index)
+                                            }
+                                            title="Eliminar respuesta"
+                                            className="w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 hover:bg-red-500/20 transition flex items-center justify-center"
+                                          >
+                                            <Trash2 size={13} />
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {isEditing ? (
+                                    <textarea
+                                      value={editReplyText}
+                                      onChange={(e) =>
+                                        setEditReplyText(e.target.value)
+                                      }
+                                      className="w-full min-h-[90px] px-4 py-3 rounded-2xl bg-black/30 border border-white/10 outline-none text-sm text-white placeholder:text-white/30 resize-none"
+                                      placeholder="Edita tu respuesta..."
+                                    />
+                                  ) : (
+                                    <p className="text-[12px] text-white/55 leading-5 break-words">
+                                      {reply.message}
+                                    </p>
+                                  )}
                                 </div>
-
-                                <p className="text-[12px] text-white/55 leading-5 break-words">
-                                  {reply.message}
-                                </p>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       )}
 
                       {/* REPLY INPUT */}
                       <div className="border-t border-white/5 pt-4">
-                        <div className="flex items-center gap-2">
+                        <p className="text-[12px] text-white/35 mb-2">
+                          Agregar nueva respuesta
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                           <input
                             value={replyText[comment.id] || ""}
                             onChange={(e) =>
-                              setReplyText((prev) => ({
-                                ...prev,
-                                [comment.id]: e.target.value,
-                              }))
-                            }
-                            placeholder="Escribe una respuesta..."
-                            className="flex-1 h-11 px-4 rounded-2xl bg-black/20 border border-white/10 outline-none text-sm text-white placeholder:text-white/30"
-                          />
-
-                          <button
-                            onClick={() => sendReply(comment.id)}
-                            disabled={Boolean(sendingReply[comment.id])}
-                            className="h-11 min-w-[54px] px-4 rounded-2xl bg-white text-black hover:opacity-90 transition flex items-center justify-center disabled:opacity-60"
-                          >
-                            {sendingReply[comment.id] ? (
-                              <span className="text-xs">...</span>
-                            ) : (
-                              <Send size={15} />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
+                              setReplyText((
