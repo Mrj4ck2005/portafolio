@@ -16,7 +16,51 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Save,
+  Trash2,
+  Pencil,
 } from "lucide-react";
+
+const toArray = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    const cleanValue = value.trim();
+
+    if (!cleanValue) return [];
+
+    try {
+      const parsed = JSON.parse(cleanValue);
+
+      if (Array.isArray(parsed)) {
+        return parsed.map((item) => String(item).trim()).filter(Boolean);
+      }
+    } catch {}
+
+    return cleanValue
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
+const commaTextToArray = (value: string): string[] => {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const lineTextToArray = (value: string): string[] => {
+  return value
+    .split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
@@ -24,114 +68,199 @@ export default function ProjectDetailPage() {
 
   const [project, setProject] = useState<any>(null);
   const [editMode, setEditMode] = useState(false);
-  const [form, setForm] = useState<any>({});
+
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [liveUrl, setLiveUrl] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [technologiesText, setTechnologiesText] = useState("");
+  const [featuresText, setFeaturesText] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrlsText, setImageUrlsText] = useState("");
+
   const [currentImage, setCurrentImage] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchProject();
   }, []);
 
+  const fillForm = (data: any) => {
+    setTitle(data?.title || "");
+    setDescription(data?.description || "");
+    setLiveUrl(data?.live_url || "");
+    setGithubUrl(data?.github_url || "");
+    setImageUrl(data?.image_url || "");
+
+    setTechnologiesText(toArray(data?.technologies).join(", "));
+    setFeaturesText(toArray(data?.key_features).join("\n"));
+    setImageUrlsText(toArray(data?.image_urls).join("\n"));
+  };
+
   const fetchProject = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("projects")
       .select("*")
       .eq("id", id)
       .single();
 
+    if (error || !data) {
+      Swal.fire({
+        title: "Error",
+        text: "No se pudo cargar el proyecto.",
+        icon: "error",
+        background: "#101010",
+        color: "#fff",
+      });
+
+      router.push("/admin/projects");
+      return;
+    }
+
     setProject(data);
-    setForm(data);
+    fillForm(data);
   };
 
   const handleDelete = async () => {
-  const result = await Swal.fire({
-    title: "Hapus project?",
-    text: "Project yang dihapus tidak bisa dikembalikan.",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Ya, Hapus",
-    cancelButtonText: "Batal",
-    background: "#101010",
-    color: "#fff",
-    confirmButtonColor: "#ef4444",
-    cancelButtonColor: "#27272a",
-    reverseButtons: true,
-  });
-
-  if (!result.isConfirmed) return;
-
-  const { error } = await supabase.from("projects").delete().eq("id", id);
-
-  if (!error) {
-    await Swal.fire({
-      title: "Berhasil!",
-      text: "Project berhasil dihapus.",
-      icon: "success",
-      timer: 1800,
-      showConfirmButton: false,
+    const result = await Swal.fire({
+      title: "¿Eliminar proyecto?",
+      text: "Esta acción no se puede deshacer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
       background: "#101010",
       color: "#fff",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#27272a",
+      reverseButtons: true,
     });
 
-    router.push("/admin/projects");
-  } else {
-    Swal.fire({
-      title: "Gagal",
-      text: "Project gagal dihapus.",
-      icon: "error",
-      background: "#101010",
-      color: "#fff",
-    });
-  }
-};
+    if (!result.isConfirmed) return;
+
+    const { error } = await supabase
+      .from("projects")
+      .delete()
+      .eq("id", id);
+
+    if (!error) {
+      await Swal.fire({
+        title: "Eliminado",
+        text: "El proyecto fue eliminado correctamente.",
+        icon: "success",
+        timer: 1800,
+        showConfirmButton: false,
+        background: "#101010",
+        color: "#fff",
+      });
+
+      router.push("/admin/projects");
+    } else {
+      Swal.fire({
+        title: "Error",
+        text: "No se pudo eliminar el proyecto. Revisa permisos RLS.",
+        icon: "error",
+        background: "#101010",
+        color: "#fff",
+      });
+    }
+  };
 
   const handleUpdate = async () => {
-  const { error } = await supabase
-    .from("projects")
-    .update(form)
-    .eq("id", id);
+    if (!title.trim()) {
+      Swal.fire({
+        title: "Campo requerido",
+        text: "El título no puede estar vacío.",
+        icon: "warning",
+        background: "#101010",
+        color: "#fff",
+      });
+      return;
+    }
 
-  if (!error) {
-    setProject(form);
-    setEditMode(false);
+    if (!description.trim()) {
+      Swal.fire({
+        title: "Campo requerido",
+        text: "La descripción no puede estar vacía.",
+        icon: "warning",
+        background: "#101010",
+        color: "#fff",
+      });
+      return;
+    }
 
-    Swal.fire({
-      title: "Berhasil",
-      text: "Project berhasil diperbarui.",
-      icon: "success",
-      timer: 1800,
-      showConfirmButton: false,
-      background: "#101010",
-      color: "#fff",
-    });
-  } else {
-    Swal.fire({
-      title: "Gagal",
-      text: "Update project gagal.",
-      icon: "error",
-      background: "#101010",
-      color: "#fff",
-    });
-  }
-};
-  if (!project)
+    setSaving(true);
+
+    const imageUrlsArray = lineTextToArray(imageUrlsText);
+
+    const payload = {
+      title: title.trim(),
+      description: description.trim(),
+      live_url: liveUrl.trim() || null,
+      github_url: githubUrl.trim() || null,
+      technologies: commaTextToArray(technologiesText),
+      key_features: lineTextToArray(featuresText),
+      image_url: imageUrl.trim() || imageUrlsArray[0] || null,
+      image_urls: imageUrlsArray.length > 0 ? imageUrlsArray : imageUrl.trim() ? [imageUrl.trim()] : [],
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from("projects")
+      .update(payload)
+      .eq("id", id)
+      .select()
+      .single();
+
+    setSaving(false);
+
+    if (!error && data) {
+      setProject(data);
+      fillForm(data);
+      setEditMode(false);
+
+      Swal.fire({
+        title: "Guardado",
+        text: "El proyecto fue actualizado correctamente.",
+        icon: "success",
+        timer: 1800,
+        showConfirmButton: false,
+        background: "#101010",
+        color: "#fff",
+      });
+    } else {
+      Swal.fire({
+        title: "Error",
+        text: "No se pudo actualizar el proyecto. Revisa permisos o campos.",
+        icon: "error",
+        background: "#101010",
+        color: "#fff",
+      });
+    }
+  };
+
+  if (!project) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white">
-        Loading...
+        Cargando proyecto...
       </div>
     );
+  }
 
-  const tech = (form.technologies || "")
-    .split(",")
-    .filter((t: string) => t.trim() !== "");
+  const tech = editMode
+    ? commaTextToArray(technologiesText)
+    : toArray(project.technologies);
 
-  const features = (form.key_features || "")
-    .split(",")
-    .filter((f: string) => f.trim() !== "");
+  const features = editMode
+    ? lineTextToArray(featuresText)
+    : toArray(project.key_features);
+
+  const galleryImagesFromProject = toArray(project.image_urls);
 
   const galleryImages =
-    project.image_urls && Array.isArray(project.image_urls)
-      ? project.image_urls
+    galleryImagesFromProject.length > 0
+      ? galleryImagesFromProject
       : project.image_url
         ? [project.image_url]
         : [];
@@ -148,11 +277,16 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const cancelEdit = () => {
+    fillForm(project);
+    setEditMode(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white px-4 sm:px-6 md:px-8 lg:px-12 py-5 md:py-8">
       {/* LIGHTBOX */}
       <AnimatePresence>
-        {previewOpen && (
+        {previewOpen && galleryImages.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -201,11 +335,11 @@ export default function ProjectDetailPage() {
         initial={{ opacity: 0, x: -15 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.4 }}
-        onClick={() => router.back()}
+        onClick={() => router.push("/admin/projects")}
         className="inline-flex items-center gap-2 text-sm text-white/50 hover:text-white transition mb-6"
       >
         <ArrowLeft size={14} />
-        Back
+        Volver a proyectos
       </motion.button>
 
       {/* MAIN GRID */}
@@ -218,11 +352,17 @@ export default function ProjectDetailPage() {
           className="w-full"
         >
           {editMode ? (
-            <input
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="text-2xl md:text-4xl font-bold bg-transparent border-b border-white/15 w-full outline-none mb-3"
-            />
+            <div className="mb-4">
+              <label className="text-xs text-white/45">
+                Título del proyecto
+              </label>
+
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="mt-2 text-2xl md:text-4xl font-bold bg-transparent border-b border-white/15 w-full outline-none pb-2"
+              />
+            </div>
           ) : (
             <h1 className="text-[28px] sm:text-[34px] md:text-[42px] font-bold leading-tight tracking-tight mb-3">
               {project.title}
@@ -232,16 +372,17 @@ export default function ProjectDetailPage() {
           <div className="w-16 h-[2px] rounded-full bg-white/20 mb-5" />
 
           {editMode ? (
-            <textarea
-              value={form.description}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  description: e.target.value,
-                })
-              }
-              className="w-full min-h-[120px] bg-[#111] border border-white/10 rounded-2xl p-4 text-sm outline-none mb-6"
-            />
+            <div className="mb-6">
+              <label className="text-xs text-white/45">
+                Descripción
+              </label>
+
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full mt-2 min-h-[130px] bg-[#111] border border-white/10 rounded-2xl p-4 text-sm outline-none resize-none"
+              />
+            </div>
           ) : (
             <p className="text-sm md:text-[13px] leading-7 text-white/60 text-justify mb-6">
               {project.description}
@@ -260,8 +401,7 @@ export default function ProjectDetailPage() {
 
               <div>
                 <p className="text-lg font-semibold">{tech.length}</p>
-
-                <p className="text-[11px] text-white/40">Total Technology</p>
+                <p className="text-[11px] text-white/40">Tecnologías</p>
               </div>
             </motion.div>
 
@@ -275,102 +415,135 @@ export default function ProjectDetailPage() {
 
               <div>
                 <p className="text-lg font-semibold">{features.length}</p>
-
-                <p className="text-[11px] text-white/40">Main Features</p>
+                <p className="text-[11px] text-white/40">Características</p>
               </div>
             </motion.div>
           </div>
 
-          {/* BUTTONS */}
+          {/* LINKS */}
           <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-8">
             {editMode ? (
-              <input
-                value={form.live_url || ""}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    live_url: e.target.value,
-                  })
-                }
-                placeholder="Live Demo URL"
-                className="bg-[#111] border border-white/10 rounded-xl px-4 py-3 w-full sm:w-[260px] outline-none text-sm"
-              />
-            ) : project.live_url ? (
-              <a
-                href={project.live_url}
-                target="_blank"
-                className="flex items-center justify-center sm:justify-start gap-2 px-4 py-3 rounded-xl bg-[#101010] border border-white/10 hover:bg-white/5 transition"
-              >
-                <ExternalLink size={15} />
-                <span className="text-sm">Live Demo</span>
-              </a>
-            ) : (
-              <div className="flex items-center justify-center sm:justify-start gap-2 px-4 py-3 rounded-xl bg-[#101010] border border-white/10 text-white/45">
-                <ExternalLink size={15} />
-                <span className="text-sm">No Link</span>
-              </div>
-            )}
+              <>
+                <div className="w-full sm:w-[260px]">
+                  <input
+                    value={liveUrl}
+                    onChange={(e) => setLiveUrl(e.target.value)}
+                    placeholder="URL del proyecto en vivo"
+                    className="bg-[#111] border border-white/10 rounded-xl px-4 py-3 w-full outline-none text-sm"
+                  />
 
-            {editMode ? (
-              <input
-                value={form.github_url || ""}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    github_url: e.target.value,
-                  })
-                }
-                placeholder="Github URL"
-                className="bg-[#111] border border-white/10 rounded-xl px-4 py-3 w-full sm:w-[260px] outline-none text-sm"
-              />
-            ) : project.github_url ? (
-              <a
-                href={project.github_url}
-                target="_blank"
-                className="flex items-center justify-center sm:justify-start gap-2 px-4 py-3 rounded-xl bg-[#101010] border border-white/10 hover:bg-white/5 transition"
-              >
-                <GitBranch size={15} />
-                <span className="text-sm">Github</span>
-              </a>
+                  <p className="mt-1 text-[10px] text-white/25">
+                    Ejemplo: https://mi-proyecto.vercel.app
+                  </p>
+                </div>
+
+                <div className="w-full sm:w-[260px]">
+                  <input
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    placeholder="URL de GitHub"
+                    className="bg-[#111] border border-white/10 rounded-xl px-4 py-3 w-full outline-none text-sm"
+                  />
+
+                  <p className="mt-1 text-[10px] text-white/25">
+                    Opcional. Déjalo vacío si no tienes repositorio.
+                  </p>
+                </div>
+              </>
             ) : (
-              <div className="flex items-center justify-center sm:justify-start gap-2 px-4 py-3 rounded-xl bg-[#101010] border border-white/10 text-white/45">
-                <GitBranch size={15} />
-                <span className="text-sm">No Link</span>
-              </div>
+              <>
+                {project.live_url ? (
+                  <a
+                    href={project.live_url}
+                    target="_blank"
+                    className="flex items-center justify-center sm:justify-start gap-2 px-4 py-3 rounded-xl bg-[#101010] border border-white/10 hover:bg-white/5 transition"
+                  >
+                    <ExternalLink size={15} />
+                    <span className="text-sm">Ver proyecto</span>
+                  </a>
+                ) : (
+                  <div className="flex items-center justify-center sm:justify-start gap-2 px-4 py-3 rounded-xl bg-[#101010] border border-white/10 text-white/45">
+                    <ExternalLink size={15} />
+                    <span className="text-sm">Sin enlace</span>
+                  </div>
+                )}
+
+                {project.github_url ? (
+                  <a
+                    href={project.github_url}
+                    target="_blank"
+                    className="flex items-center justify-center sm:justify-start gap-2 px-4 py-3 rounded-xl bg-[#101010] border border-white/10 hover:bg-white/5 transition"
+                  >
+                    <GitBranch size={15} />
+                    <span className="text-sm">GitHub</span>
+                  </a>
+                ) : (
+                  <div className="flex items-center justify-center sm:justify-start gap-2 px-4 py-3 rounded-xl bg-[#101010] border border-white/10 text-white/45">
+                    <GitBranch size={15} />
+                    <span className="text-sm">Sin GitHub</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
           {/* TECH STACK */}
-          <div>
+          <div className="mb-7">
             <div className="flex items-center gap-2 mb-4">
               <Code2 size={15} className="text-white/70" />
-              <p className="text-sm font-semibold">Technologies Used</p>
+              <p className="text-sm font-semibold">Tecnologías usadas</p>
             </div>
 
             {editMode ? (
-              <input
-                value={form.technologies}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    technologies: e.target.value,
-                  })
-                }
-                className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 outline-none"
-              />
-            ) : (
+              <div>
+                <input
+                  value={technologiesText}
+                  onChange={(e) => setTechnologiesText(e.target.value)}
+                  placeholder="React, Next.js, Supabase"
+                  className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 outline-none text-sm"
+                />
+
+                <p className="mt-1 text-[10px] text-white/25">
+                  Sepáralas con comas. Ejemplo: React, Next.js, Supabase
+                </p>
+              </div>
+            ) : tech.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {tech.map((t: string, i: number) => (
                   <span
                     key={i}
                     className="px-3 py-2 rounded-xl bg-[#101010] border border-white/10 text-[11px] text-white/75"
                   >
-                    {t.trim()}
+                    {t}
                   </span>
                 ))}
               </div>
+            ) : (
+              <p className="text-sm text-white/35">
+                No hay tecnologías registradas.
+              </p>
             )}
           </div>
+
+          {/* IMAGE URL EDIT */}
+          {editMode && (
+            <div className="mb-7">
+              <label className="text-xs text-white/45">
+                Imagen principal
+              </label>
+
+              <input
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="URL de imagen principal"
+                className="w-full mt-2 bg-[#111] border border-white/10 rounded-xl px-4 py-3 outline-none text-sm"
+              />
+
+              <p className="mt-1 text-[10px] text-white/25">
+                Puedes pegar una URL de imagen. Si está vacío, se usará la primera imagen de la galería.
+              </p>
+            </div>
+          )}
         </motion.div>
 
         {/* RIGHT */}
@@ -439,6 +612,25 @@ export default function ProjectDetailPage() {
             </div>
           )}
 
+          {editMode && (
+            <div className="mb-6 xl:max-w-[520px] xl:ml-auto">
+              <label className="text-xs text-white/45">
+                URLs de galería
+              </label>
+
+              <textarea
+                value={imageUrlsText}
+                onChange={(e) => setImageUrlsText(e.target.value)}
+                placeholder={`https://imagen-1.jpg\nhttps://imagen-2.jpg`}
+                className="w-full mt-2 min-h-[120px] bg-[#111] border border-white/10 rounded-2xl p-4 text-sm outline-none resize-none"
+              />
+
+              <p className="mt-1 text-[10px] text-white/25">
+                Escribe una URL por línea. La primera se puede usar como portada.
+              </p>
+            </div>
+          )}
+
           {/* FEATURES */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
@@ -448,30 +640,37 @@ export default function ProjectDetailPage() {
           >
             <div className="flex items-center gap-2 mb-4">
               <Sparkles size={15} className="text-white/70" />
-              <p className="text-sm font-semibold">Key Features</p>
+              <p className="text-sm font-semibold">
+                Características principales
+              </p>
             </div>
 
             {editMode ? (
-              <textarea
-                value={form.key_features}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    key_features: e.target.value,
-                  })
-                }
-                className="w-full min-h-[160px] bg-[#0f0f0f] border border-white/10 rounded-xl p-4 outline-none"
-              />
-            ) : (
+              <div>
+                <textarea
+                  value={featuresText}
+                  onChange={(e) => setFeaturesText(e.target.value)}
+                  placeholder={`Consulta de datos públicos\nValidación RENIEC\nInterfaz responsive`}
+                  className="w-full min-h-[160px] bg-[#0f0f0f] border border-white/10 rounded-xl p-4 outline-none text-sm resize-none"
+                />
+
+                <p className="mt-1 text-[10px] text-white/25">
+                  Escribe una característica por línea.
+                </p>
+              </div>
+            ) : features.length > 0 ? (
               <ul className="space-y-3 text-sm text-white/65 leading-6">
                 {features.map((f: string, i: number) => (
                   <li key={i} className="flex gap-3">
                     <span className="text-white/35 mt-[2px]">•</span>
-
-                    <span>{f.trim()}</span>
+                    <span>{f}</span>
                   </li>
                 ))}
               </ul>
+            ) : (
+              <p className="text-sm text-white/35">
+                No hay características registradas.
+              </p>
             )}
           </motion.div>
         </motion.div>
@@ -483,32 +682,37 @@ export default function ProjectDetailPage() {
           <>
             <button
               onClick={handleUpdate}
-              className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white text-black font-medium hover:opacity-90 transition"
+              disabled={saving}
+              className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white text-black font-medium hover:opacity-90 transition flex items-center justify-center gap-2 disabled:opacity-60"
             >
-              Save
+              <Save size={16} />
+              {saving ? "Guardando..." : "Guardar cambios"}
             </button>
 
             <button
-              onClick={() => setEditMode(false)}
+              onClick={cancelEdit}
+              disabled={saving}
               className="w-full sm:w-auto px-5 py-3 rounded-2xl border border-white/10 hover:bg-white/5 transition"
             >
-              Cancel
+              Cancelar
             </button>
           </>
         ) : (
           <>
             <button
               onClick={() => setEditMode(true)}
-              className="w-full sm:w-auto px-5 py-3 rounded-2xl border border-white/10 hover:bg-white/5 transition"
+              className="w-full sm:w-auto px-5 py-3 rounded-2xl border border-white/10 hover:bg-white/5 transition flex items-center justify-center gap-2"
             >
-              Edit
+              <Pencil size={16} />
+              Editar
             </button>
 
             <button
               onClick={handleDelete}
-              className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-red-500 hover:bg-red-600 transition"
+              className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-red-500 hover:bg-red-600 transition flex items-center justify-center gap-2"
             >
-              Delete
+              <Trash2 size={16} />
+              Eliminar
             </button>
           </>
         )}
