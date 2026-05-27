@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/app/admin/Sidebar";
 import { supabase } from "@/lib/supabase";
-import { Plus, Trash2, Pencil, X, Upload } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Upload, Link as LinkIcon } from "lucide-react";
 import Swal from "sweetalert2";
 
 export default function TechStackPage() {
@@ -15,6 +15,7 @@ export default function TechStackPage() {
 
   const [name, setName] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
+  const [logoUrl, setLogoUrl] = useState("");
   const [preview, setPreview] = useState("");
 
   const [saving, setSaving] = useState(false);
@@ -43,25 +44,48 @@ export default function TechStackPage() {
   }, []);
 
   const fetchTechStacks = async () => {
-    const { data } = await supabase
+    setLoading(true);
+
+    const { data, error } = await supabase
       .from("tech_stack")
       .select("*");
 
-    const sorted = (data || []).sort(
-      (a, b) =>
-        new Date(a.created_at).getTime() -
-        new Date(b.created_at).getTime()
-    );
+    if (!error) {
+      const sorted = (data || []).sort(
+        (a, b) =>
+          new Date(a.created_at).getTime() -
+          new Date(b.created_at).getTime()
+      );
 
-    setTechStacks(sorted);
+      setTechStacks(sorted);
+    }
+
     setLoading(false);
   };
 
   const resetForm = () => {
     setName("");
     setLogo(null);
+    setLogoUrl("");
     setPreview("");
     setEditId(null);
+  };
+
+  const cleanFileName = (fileName: string) => {
+    const extension = fileName.split(".").pop() || "png";
+
+    const cleanName = fileName
+      .replace(/\.[^/.]+$/, "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9-_]/g, "-")
+      .replace(/-+/g, "-")
+      .toLowerCase()
+      .slice(0, 60);
+
+    return `tech-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 10)}-${cleanName}.${extension}`;
   };
 
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,64 +94,123 @@ export default function TechStackPage() {
     if (!file) return;
 
     setLogo(file);
+    setLogoUrl("");
     setPreview(URL.createObjectURL(file));
   };
 
+  const handleLogoUrlChange = (value: string) => {
+    setLogoUrl(value);
+    setLogo(null);
+    setPreview(value);
+  };
+
   const handleSave = async () => {
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      Swal.fire({
+        title: "Campo requerido",
+        text: "Escribe el nombre de la tecnología.",
+        icon: "warning",
+        background: "#111",
+        color: "#fff",
+      });
+      return;
+    }
 
     setSaving(true);
 
-    let logoUrl = preview;
+    try {
+      let finalLogoUrl = logoUrl.trim() || preview || "";
 
-    if (logo) {
-      const fileName = `tech-${Date.now()}-${logo.name}`;
+      if (logo) {
+        const fileName = cleanFileName(logo.name);
 
-      const { error: uploadError } = await supabase.storage
-        .from("tech-stack")
-        .upload(fileName, logo);
+        const { error: uploadError } = await supabase.storage
+          .from("tech-stack")
+          .upload(fileName, logo, {
+            cacheControl: "3600",
+            upsert: false,
+          });
 
-      if (!uploadError) {
+        if (uploadError) {
+          console.error("Error subiendo logo:", uploadError);
+
+          Swal.fire({
+            title: "Error",
+            text: "No se pudo subir el logo. Revisa el bucket tech-stack o sus permisos.",
+            icon: "error",
+            background: "#111",
+            color: "#fff",
+          });
+
+          setSaving(false);
+          return;
+        }
+
         const { data } = supabase.storage
           .from("tech-stack")
           .getPublicUrl(fileName);
 
-        logoUrl = data.publicUrl;
+        finalLogoUrl = data.publicUrl;
       }
+
+      if (editId) {
+        const { error } = await supabase
+          .from("tech_stack")
+          .update({
+            name: name.trim(),
+            logo_url: finalLogoUrl || null,
+          })
+          .eq("id", editId);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("tech_stack").insert([
+          {
+            name: name.trim(),
+            logo_url: finalLogoUrl || null,
+          },
+        ]);
+
+        if (error) throw error;
+      }
+
+      setSaving(false);
+      setOpen(false);
+      resetForm();
+      fetchTechStacks();
+
+      Swal.fire({
+        title: "Guardado",
+        text: "La tecnología se guardó correctamente.",
+        icon: "success",
+        timer: 1600,
+        showConfirmButton: false,
+        background: "#111",
+        color: "#fff",
+      });
+    } catch (error) {
+      console.error("Error guardando tecnología:", error);
+
+      setSaving(false);
+
+      Swal.fire({
+        title: "Error",
+        text: "No se pudo guardar la tecnología. Revisa permisos o campos.",
+        icon: "error",
+        background: "#111",
+        color: "#fff",
+      });
     }
-
-    if (editId) {
-      await supabase
-        .from("tech_stack")
-        .update({
-          name,
-          logo_url: logoUrl,
-        })
-        .eq("id", editId);
-    } else {
-      await supabase.from("tech_stack").insert([
-        {
-          name,
-          logo_url: logoUrl,
-        },
-      ]);
-    }
-
-    setSaving(false);
-    setOpen(false);
-    resetForm();
-
-    fetchTechStacks();
   };
 
   const handleDelete = async (id: number) => {
     const result = await Swal.fire({
-      title: "Delete Tech Stack?",
-      text: "Data yang dihapus tidak bisa dikembalikan.",
+      title: "¿Eliminar tecnología?",
+      text: "Esta acción no se puede deshacer.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, Delete",
-      cancelButtonText: "Cancel",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
       background: "#111",
       color: "#fff",
       confirmButtonColor: "#ef4444",
@@ -148,8 +231,8 @@ export default function TechStackPage() {
       );
 
       Swal.fire({
-        title: "Deleted!",
-        text: "Tech stack berhasil dihapus.",
+        title: "Eliminado",
+        text: "La tecnología fue eliminada correctamente.",
         icon: "success",
         timer: 1800,
         showConfirmButton: false,
@@ -158,8 +241,8 @@ export default function TechStackPage() {
       });
     } else {
       Swal.fire({
-        title: "Failed",
-        text: "Gagal menghapus tech stack.",
+        title: "Error",
+        text: "No se pudo eliminar la tecnología.",
         icon: "error",
         background: "#111",
         color: "#fff",
@@ -169,8 +252,10 @@ export default function TechStackPage() {
 
   const handleEdit = (item: any) => {
     setEditId(item.id);
-    setName(item.name);
-    setPreview(item.logo_url);
+    setName(item.name || "");
+    setLogo(null);
+    setLogoUrl(item.logo_url || "");
+    setPreview(item.logo_url || "");
     setOpen(true);
   };
 
@@ -188,11 +273,11 @@ export default function TechStackPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold">
-                Tech Stack
+                Tecnologías
               </h1>
 
               <p className="text-sm text-white/40 mt-1">
-                Manage technology stack
+                Administra los lenguajes, frameworks y herramientas de tu portafolio
               </p>
             </div>
 
@@ -204,18 +289,18 @@ export default function TechStackPage() {
               className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white text-black hover:scale-[1.02] transition"
             >
               <Plus size={16} />
-              Add Tech
+              Agregar tecnología
             </button>
           </div>
 
           {/* GRID */}
           {loading ? (
             <div className="text-white/40 text-sm">
-              Loading...
+              Cargando tecnologías...
             </div>
           ) : techStacks.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] h-[220px] flex items-center justify-center text-white/35 text-sm">
-              No tech stack
+              No hay tecnologías registradas
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
@@ -229,16 +314,23 @@ export default function TechStackPage() {
                       {item.logo_url ? (
                         <img
                           src={item.logo_url}
-                          className="w-full h-full object-cover"
+                          alt={item.name}
+                          className="w-full h-full object-contain p-2"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
                         />
                       ) : (
-                        <div className="w-full h-full bg-white/[0.03]" />
+                        <div className="w-full h-full bg-white/[0.03] flex items-center justify-center text-[10px] text-white/30">
+                          Sin logo
+                        </div>
                       )}
                     </div>
 
                     <div className="flex gap-2 ml-3">
                       <button
                         onClick={() => handleEdit(item)}
+                        title="Editar tecnología"
                         className="w-9 h-9 rounded-xl border border-white/10 hover:bg-white/10 flex items-center justify-center transition"
                       >
                         <Pencil size={14} />
@@ -246,6 +338,7 @@ export default function TechStackPage() {
 
                       <button
                         onClick={() => handleDelete(item.id)}
+                        title="Eliminar tecnología"
                         className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 flex items-center justify-center hover:bg-red-500/20 transition"
                       >
                         <Trash2 size={14} />
@@ -270,7 +363,7 @@ export default function TechStackPage() {
             {/* HEADER */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg sm:text-xl font-semibold">
-                {editId ? "Edit Tech" : "Add Tech"}
+                {editId ? "Editar tecnología" : "Agregar tecnología"}
               </h2>
 
               <button
@@ -284,65 +377,43 @@ export default function TechStackPage() {
               </button>
             </div>
 
-            {/* IMAGE */}
-            <label className="border border-dashed border-white/10 rounded-2xl bg-[#0f0f0f] h-40 sm:h-44 flex flex-col items-center justify-center cursor-pointer overflow-hidden mb-4">
-              {preview ? (
-                <img
-                  src={preview}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <>
-                  <Upload
-                    size={22}
-                    className="text-white/50 mb-2"
-                  />
-
-                  <p className="text-sm text-white/50">
-                    Upload Logo
-                  </p>
-                </>
-              )}
+            {/* NAME */}
+            <div className="mb-4">
+              <label className="text-xs text-white/50">
+                Nombre de la tecnología
+              </label>
 
               <input
-                type="file"
-                hidden
-                accept="image/*"
-                onChange={handleImage}
+                placeholder="Ejemplo: React"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full mt-2 px-4 py-3 rounded-2xl bg-[#0f0f0f] border border-white/10 outline-none text-sm"
               />
-            </label>
 
-            {/* INPUT */}
-            <input
-              placeholder="Tech Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl bg-[#0f0f0f] border border-white/10 outline-none mb-5 text-sm"
-            />
-
-            {/* BUTTONS */}
-            <div className="flex flex-col sm:flex-row justify-end gap-3">
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  resetForm();
-                }}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-white/10 hover:bg-white/5 transition"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white text-black hover:opacity-90 transition"
-              >
-                {saving ? "Saving..." : "Save"}
-              </button>
+              <p className="mt-1 text-[10px] text-white/25">
+                Escribe el nombre del lenguaje, framework o herramienta.
+              </p>
             </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+
+            {/* LOGO URL */}
+            <div className="mb-4">
+              <label className="text-xs text-white/50">
+                URL del logo
+              </label>
+
+              <div className="relative mt-2">
+                <LinkIcon
+                  size={16}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35"
+                />
+
+                <input
+                  placeholder="https://cdn.jsdelivr.net/..."
+                  value={logoUrl}
+                  onChange={(e) => handleLogoUrlChange(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#0f0f0f] border border-white/10 outline-none text-sm"
+                />
+              </div>
+
+              <p className="mt-1 text-[10px] text-white/25">
+                Puedes pegar un enlace de logo SVG o
