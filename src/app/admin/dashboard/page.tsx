@@ -102,7 +102,7 @@ export default function DashboardPage() {
 
       setRecentComments(recentCommentsRes.data || []);
     } catch (err) {
-      console.error("Dashboard fetch error:", err);
+      console.error("Error al cargar el panel:", err);
     }
 
     setLoading(false);
@@ -111,22 +111,22 @@ export default function DashboardPage() {
   const cards = [
     {
       icon: Eye,
-      title: "Total Projects",
+      title: "Total de proyectos",
       value: stats.projects,
     },
     {
       icon: Users,
-      title: "Certificates",
+      title: "Certificados",
       value: stats.certificates,
     },
     {
       icon: MessageSquare,
-      title: "Comments",
+      title: "Comentarios",
       value: stats.comments,
     },
     {
       icon: Layers,
-      title: "Pinned",
+      title: "Fijados",
       value: stats.pinned,
     },
   ];
@@ -134,7 +134,7 @@ export default function DashboardPage() {
   if (!authorized) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white">
-        Checking session...
+        Verificando sesión...
       </div>
     );
   }
@@ -149,11 +149,11 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
             <div>
               <h1 className="text-2xl sm:text-3xl font-semibold">
-                Dashboard
+                Panel principal
               </h1>
 
               <p className="text-sm text-white/40 mt-1">
-                Welcome back, Admin
+                Bienvenido nuevamente, administrador
               </p>
             </div>
 
@@ -165,7 +165,7 @@ export default function DashboardPage() {
                 size={14}
                 className="group-hover:rotate-180 transition duration-500"
               />
-              Refresh
+              Actualizar
             </button>
           </div>
 
@@ -197,7 +197,7 @@ export default function DashboardPage() {
 
                   <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
                     <p className="text-[10px] text-white/25">
-                      Database synced
+                      Base de datos sincronizada
                     </p>
 
                     <TrendingUp
@@ -217,27 +217,27 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h2 className="text-base font-medium">
-                    Recent Comments
+                    Comentarios recientes
                   </h2>
 
                   <p className="text-xs text-white/35 mt-1">
-                    Latest user activity
+                    Última actividad de los usuarios
                   </p>
                 </div>
 
                 <span className="text-xs text-white/35">
-                  Live DB
+                  Base de datos en vivo
                 </span>
               </div>
 
               <div className="max-h-[580px] overflow-y-auto pr-2 space-y-3 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                 {loading ? (
                   <div className="text-sm text-white/30">
-                    Loading comments...
+                    Cargando comentarios...
                   </div>
                 ) : recentComments.length === 0 ? (
                   <div className="text-sm text-white/30">
-                    No comments available
+                    No hay comentarios disponibles
                   </div>
                 ) : (
                   recentComments.map((comment, i) => (
@@ -254,13 +254,15 @@ export default function DashboardPage() {
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="text-[13px] font-medium truncate">
-                                {comment.name}
+                                {comment.name || "Usuario"}
                               </p>
 
                               <span className="text-[10px] text-white/25">
-                                {new Date(
-                                  comment.created_at
-                                ).toLocaleDateString()}
+                                {comment.created_at
+                                  ? new Date(
+                                      comment.created_at
+                                    ).toLocaleDateString("es-PE")
+                                  : "Sin fecha"}
                               </span>
                             </div>
 
@@ -284,20 +286,20 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {[
                 {
-                  title: "Projects",
-                  desc: `${stats.projects} total projects`,
+                  title: "Proyectos",
+                  desc: `${stats.projects} proyectos en total`,
                 },
                 {
-                  title: "Certificates",
-                  desc: `${stats.certificates} certificates`,
+                  title: "Certificados",
+                  desc: `${stats.certificates} certificados`,
                 },
                 {
-                  title: "Comments",
-                  desc: `${stats.comments} comments`,
+                  title: "Comentarios",
+                  desc: `${stats.comments} comentarios`,
                 },
                 {
-                  title: "Pinned",
-                  desc: `${stats.pinned} highlighted`,
+                  title: "Fijados",
+                  desc: `${stats.pinned} destacados`,
                 },
               ].map((item, i) => (
                 <div
@@ -309,16 +311,16 @@ export default function DashboardPage() {
                   </p>
 
                   <p className="text-xs text-white/40 mt-2">
-                    {loading ? "Loading..." : item.desc}
+                    {loading ? "Cargando..." : item.desc}
                   </p>
 
                   <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
                     <span className="text-[11px] text-white/30">
-                      Synced
+                      Sincronizado
                     </span>
 
                     <span className="text-[11px] text-green-300">
-                      Active
+                      Activo
                     </span>
                   </div>
                 </div>
