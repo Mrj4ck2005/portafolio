@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence, Variants } from 'framer-motion'
-import { Upload, Heart, Pin } from 'lucide-react'
+import { Upload, Heart, Pin, CornerDownRight } from 'lucide-react'
 import useComments from '@/hooks/useComments'
 
 const smoothEase: [number, number, number, number] = [0.22, 1, 0.36, 1]
@@ -29,6 +29,12 @@ const itemVariants: Variants = {
       ease: smoothEase,
     },
   },
+}
+
+type Reply = {
+  username?: string
+  message?: string
+  created_at?: string
 }
 
 export default function CommentsSection() {
@@ -63,6 +69,18 @@ export default function CommentsSection() {
     setComment('')
     setImage(null)
     setPreview(null)
+  }
+
+  const formatDateTime = (date?: string) => {
+    if (!date) return ''
+
+    return new Date(date).toLocaleString('es-PE', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
   }
 
   return (
@@ -149,7 +167,7 @@ export default function CommentsSection() {
           whileTap={{ scale: 0.98 }}
           onClick={handleSubmit}
           disabled={loading}
-          className="w-full rounded-2xl py-3 md:py-4 bg-white/10 border border-white/10 transition-all"
+          className="w-full rounded-2xl py-3 md:py-4 bg-white/10 border border-white/10 transition-all disabled:opacity-60"
         >
           {loading ? 'Publicando...' : 'Publicar comentario'}
         </motion.button>
@@ -165,85 +183,127 @@ export default function CommentsSection() {
       >
         <div className="space-y-3">
           <AnimatePresence initial={false}>
-            {comments.map((item, i) => (
-              <motion.div
-                key={item.id || i}
-                layout
-                initial={{
-                  opacity: 0,
-                  y: 18,
-                  scale: 0.96,
-                  filter: 'blur(6px)',
-                }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                  scale: 1,
-                  filter: 'blur(0px)',
-                }}
-                exit={{
-                  opacity: 0,
-                  y: -10,
-                  scale: 0.96,
-                }}
-                transition={{
-                  duration: 0.55,
-                  ease: smoothEase,
-                  layout: {
-                    duration: 0.45,
-                    ease: smoothEase,
-                  },
-                }}
-                className={`rounded-[20px] md:rounded-[24px] border p-3 md:p-4 ${
-                  item.is_pinned
-                    ? 'border-purple-500/30 bg-purple-500/5'
-                    : 'border-white/10 bg-white/[0.03]'
-                }`}
-              >
-                <div className="flex gap-3">
-                  <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold shrink-0">
-                    {item.name?.charAt(0)}
-                  </div>
+            {comments.map((item, i) => {
+              const replies: Reply[] = Array.isArray(item.replies)
+                ? item.replies
+                : []
 
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <p className="text-sm font-medium">
-                        {item.name}
+              return (
+                <motion.div
+                  key={item.id || i}
+                  layout
+                  initial={{
+                    opacity: 0,
+                    y: 18,
+                    scale: 0.96,
+                    filter: 'blur(6px)',
+                  }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    filter: 'blur(0px)',
+                  }}
+                  exit={{
+                    opacity: 0,
+                    y: -10,
+                    scale: 0.96,
+                  }}
+                  transition={{
+                    duration: 0.55,
+                    ease: smoothEase,
+                    layout: {
+                      duration: 0.45,
+                      ease: smoothEase,
+                    },
+                  }}
+                  className={`rounded-[20px] md:rounded-[24px] border p-3 md:p-4 ${
+                    item.is_pinned
+                      ? 'border-purple-500/30 bg-purple-500/5'
+                      : 'border-white/10 bg-white/[0.03]'
+                  }`}
+                >
+                  <div className="flex gap-3">
+                    <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold shrink-0">
+                      {item.name?.charAt(0) || 'U'}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <p className="text-sm font-medium break-words">
+                          {item.name || 'Usuario'}
+                        </p>
+
+                        {item.is_pinned && (
+                          <div className="flex items-center gap-1 px-2 py-[3px] rounded-full bg-purple-500/15 border border-purple-500/20 text-[10px] text-purple-300">
+                            <Pin size={10} />
+                            FIJADO
+                          </div>
+                        )}
+                      </div>
+
+                      <p className="text-[12px] md:text-[13px] text-white/55 break-words leading-relaxed">
+                        {item.comment}
                       </p>
 
-                      {item.is_pinned && (
-                        <div className="flex items-center gap-1 px-2 py-[3px] rounded-full bg-purple-500/15 border border-purple-500/20 text-[10px] text-purple-300">
-                          <Pin size={10} />
-                          FIJADO
+                      {item.image_url && (
+                        <img
+                          src={item.image_url}
+                          alt="Imagen del comentario"
+                          className="mt-3 rounded-xl w-full max-h-48 md:max-h-56 object-cover border border-white/10"
+                        />
+                      )}
+
+                      {/* RESPUESTAS DEL ADMIN */}
+                      {replies.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          {replies.map((reply, index) => (
+                            <div
+                              key={index}
+                              className="relative rounded-2xl border border-white/10 bg-black/25 px-3 py-3"
+                            >
+                              <div className="flex items-start gap-2">
+                                <div className="mt-[2px] text-purple-300/80 shrink-0">
+                                  <CornerDownRight size={14} />
+                                </div>
+
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                                    <span className="text-[11px] font-semibold text-purple-300">
+                                      {reply.username || 'Administrador'}
+                                    </span>
+
+                                    {reply.created_at && (
+                                      <span className="text-[9px] text-white/30">
+                                        {formatDateTime(reply.created_at)}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <p className="text-[11px] md:text-[12px] text-white/50 leading-relaxed break-words">
+                                    {reply.message}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
 
-                    <p className="text-[12px] md:text-[13px] text-white/55">
-                      {item.comment}
-                    </p>
-
-                    {item.image_url && (
-                      <img
-                        src={item.image_url}
-                        alt="Imagen del comentario"
-                        className="mt-3 rounded-xl w-full max-h-48 md:max-h-56 object-cover border border-white/10"
-                      />
-                    )}
+                    <button
+                      onClick={() =>
+                        likeComment(item.id, item.likes || 0)
+                      }
+                      className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white transition-colors shrink-0"
+                    >
+                      <Heart size={13} />
+                      {item.likes || 0}
+                    </button>
                   </div>
-
-                  <button
-                    onClick={() =>
-                      likeComment(item.id, item.likes)
-                    }
-                    className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white transition-colors"
-                  >
-                    <Heart size={13} />
-                    {item.likes || 0}
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              )
+            })}
           </AnimatePresence>
         </div>
       </motion.div>
