@@ -679,7 +679,39 @@ export default function AdminCommentsPage() {
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                          <input
+                                                   <input
                             value={replyText[comment.id] || ""}
                             onChange={(e) =>
-                              setReplyText((
+                              setReplyText((prev) => ({
+                                ...prev,
+                                [comment.id]: e.target.value,
+                              }))
+                            }
+                            placeholder="Escribe una respuesta..."
+                            className="flex-1 h-11 px-4 rounded-2xl bg-black/20 border border-white/10 outline-none text-sm text-white placeholder:text-white/30"
+                          />
+
+                          <button
+                            onClick={() => sendReply(comment.id)}
+                            disabled={Boolean(sendingReply[comment.id])}
+                            className="h-11 min-w-[54px] px-4 rounded-2xl bg-white text-black hover:opacity-90 transition flex items-center justify-center disabled:opacity-60"
+                          >
+                            {sendingReply[comment.id] ? (
+                              <span className="text-xs">...</span>
+                            ) : (
+                              <Send size={15} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
