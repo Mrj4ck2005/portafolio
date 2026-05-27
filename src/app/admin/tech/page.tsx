@@ -181,7 +181,9 @@ export default function TechStackPage() {
 
       Swal.fire({
         title: "Guardado",
-        text: "La tecnología se guardó correctamente.",
+        text: editId
+          ? "La tecnología se actualizó correctamente."
+          : "La tecnología se agregó correctamente.",
         icon: "success",
         timer: 1600,
         showConfirmButton: false,
@@ -195,7 +197,7 @@ export default function TechStackPage() {
 
       Swal.fire({
         title: "Error",
-        text: "No se pudo guardar la tecnología. Revisa permisos o campos.",
+        text: "No se pudo guardar la tecnología. Revisa los permisos de la tabla o los datos ingresados.",
         icon: "error",
         background: "#111",
         color: "#fff",
@@ -234,7 +236,7 @@ export default function TechStackPage() {
         title: "Eliminado",
         text: "La tecnología fue eliminada correctamente.",
         icon: "success",
-        timer: 1800,
+        timer: 1600,
         showConfirmButton: false,
         background: "#111",
         color: "#fff",
@@ -314,7 +316,7 @@ export default function TechStackPage() {
                       {item.logo_url ? (
                         <img
                           src={item.logo_url}
-                          alt={item.name}
+                          alt={item.name || "Logo de tecnología"}
                           className="w-full h-full object-contain p-2"
                           onError={(e) => {
                             e.currentTarget.style.display = "none";
@@ -377,6 +379,31 @@ export default function TechStackPage() {
               </button>
             </div>
 
+            {/* PREVIEW */}
+            <div className="border border-dashed border-white/10 rounded-2xl bg-[#0f0f0f] h-40 sm:h-44 flex flex-col items-center justify-center overflow-hidden mb-4">
+              {preview ? (
+                <img
+                  src={preview}
+                  alt="Vista previa del logo"
+                  className="w-full h-full object-contain p-5"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              ) : (
+                <>
+                  <Upload
+                    size={22}
+                    className="text-white/50 mb-2"
+                  />
+
+                  <p className="text-sm text-white/50">
+                    Vista previa del logo
+                  </p>
+                </>
+              )}
+            </div>
+
             {/* NAME */}
             <div className="mb-4">
               <label className="text-xs text-white/50">
@@ -395,7 +422,7 @@ export default function TechStackPage() {
               </p>
             </div>
 
-            {/* LOGO URL */}
+            {/* URL LOGO */}
             <div className="mb-4">
               <label className="text-xs text-white/50">
                 URL del logo
@@ -403,7 +430,7 @@ export default function TechStackPage() {
 
               <div className="relative mt-2">
                 <LinkIcon
-                  size={16}
+                  size={15}
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35"
                 />
 
@@ -416,4 +443,81 @@ export default function TechStackPage() {
               </div>
 
               <p className="mt-1 text-[10px] text-white/25">
-                Puedes pegar un enlace de logo SVG o
+                Puedes pegar un enlace de imagen SVG, PNG o JPG. Si subes una imagen, se usará la imagen subida.
+              </p>
+            </div>
+
+            {/* UPLOAD */}
+            <div className="mb-5">
+              <label className="text-xs text-white/50 block mb-2">
+                Subir logo desde tu computadora
+              </label>
+
+              <label className="h-12 border border-dashed border-white/10 rounded-2xl bg-[#0f0f0f] hover:bg-white/[0.04] transition flex items-center justify-center gap-2 cursor-pointer">
+                <Upload
+                  size={16}
+                  className="text-white/50"
+                />
+
+                <span className="text-sm text-white/50">
+                  Seleccionar imagen
+                </span>
+
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleImage}
+                />
+              </label>
+
+              <p className="mt-1 text-[10px] text-white/25">
+                Esta opción sube la imagen al bucket tech-stack de Supabase Storage.
+              </p>
+            </div>
+
+            {/* EXAMPLES */}
+            <div className="mb-5 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+              <p className="text-[11px] text-white/35 mb-2">
+                Ejemplos de URLs de logos:
+              </p>
+
+              <div className="space-y-1 text-[10px] text-white/25 break-all">
+                <p>
+                  React: https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg
+                </p>
+                <p>
+                  Next.js: https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nextjs/nextjs-original.svg
+                </p>
+                <p>
+                  Node.js: https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg
+                </p>
+              </div>
+            </div>
+
+            {/* BUTTONS */}
+            <div className="flex flex-col sm:flex-row justify-end gap-3">
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  resetForm();
+                }}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-white/10 hover:bg-white/5 transition"
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white text-black hover:opacity-90 transition disabled:opacity-60"
+              >
+                {saving ? "Guardando..." : "Guardar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
