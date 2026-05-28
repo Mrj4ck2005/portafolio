@@ -1,4 +1,5 @@
 'use client';
+
 import './index.css';
 import * as THREE from 'three';
 import React, { useEffect, useRef, useState } from 'react';
@@ -28,19 +29,41 @@ const PHOTO_PATH = '/assets/PP.png';
 useGLTF.preload(GLTF_PATH);
 useTexture.preload(TEXTURE_PATH);
 
-
 export default function App() {
+  const wrapperRef = useRef(null);
+
   const [isMobile, setIsMobile] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
+
     check();
     window.addEventListener('resize', check);
+
     return () => window.removeEventListener('resize', check);
+  }, []);
+
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      {
+        threshold: 0.2,
+      }
+    );
+
+    observer.observe(wrapperRef.current);
+
+    return () => observer.disconnect();
   }, []);
 
   return (
     <div
+      ref={wrapperRef}
       className="responsive-wrapper"
       style={{
         position: 'absolute',
@@ -58,12 +81,12 @@ export default function App() {
           background: 'transparent',
           width: '100%',
           height: '100%',
-          pointerEvents: isMobile ? 'none' : 'auto', // ✅ fix drag desktop
+          pointerEvents: isMobile ? 'none' : 'auto',
         }}
       >
         <ambientLight intensity={Math.PI} />
 
-        <Scene isMobile={isMobile} />
+        <Scene isMobile={isMobile} isVisible={isVisible} />
 
         <Environment blur={0.75}>
           <Lightformer
@@ -100,7 +123,7 @@ export default function App() {
   );
 }
 
-function Scene({ isMobile }) {
+function Scene({ isMobile, isVisible }) {
   return (
     <Physics
       key={isMobile ? 'mobile' : 'desktop'}
@@ -108,19 +131,27 @@ function Scene({ isMobile }) {
       gravity={[0, -40, 0]}
       timeStep={1 / 60}
     >
-      {/* hanya desktop */}
-      {!isMobile && <Band isMobile={isMobile} />}
+      {!isMobile && (
+        <Band isMobile={isMobile} isVisible={isVisible} />
+      )}
     </Physics>
   );
 }
 
-function Band({ isMobile, maxSpeed = 50, minSpeed = 10 }) {
+function Band({
+  isMobile,
+  isVisible,
+  maxSpeed = 50,
+  minSpeed = 10,
+}) {
   const band = useRef();
   const fixed = useRef();
   const j1 = useRef();
   const j2 = useRef();
   const j3 = useRef();
   const card = useRef();
+
+  const idleStarted = useRef(false);
 
   const vec = new THREE.Vector3();
   const ang = new THREE.Vector3();
@@ -182,13 +213,25 @@ function Band({ isMobile, maxSpeed = 50, minSpeed = 10 }) {
 
       if (screenY < limit) newY = card.current.translation().y;
 
-      card.current.setNextKinematicTranslation({ x: newX, y: newY, z: newZ });
+      card.current.setNextKinematicTranslation({
+        x: newX,
+        y: newY,
+        z: newZ,
+      });
     }
 
-    if (fixed.current && j1.current && j2.current && j3.current && card.current) {
+    if (
+      fixed.current &&
+      j1.current &&
+      j2.current &&
+      j3.current &&
+      card.current
+    ) {
       [j1, j2].forEach((ref) => {
         if (!ref.current.lerped) {
-          ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
+          ref.current.lerped = new THREE.Vector3().copy(
+            ref.current.translation()
+          );
         }
 
         const d = Math.max(
@@ -219,6 +262,35 @@ function Band({ isMobile, maxSpeed = 50, minSpeed = 10 }) {
         y: ang.y - rot.y * 0.25,
         z: ang.z,
       });
+
+      /*
+        Movimiento sutil de pista visual:
+        - Solo funciona cuando la card está visible.
+        - No funciona mientras arrastras.
+        - Es muy pequeño para no romper la física.
+      */
+      if (isVisible && !dragged && canDrag) {
+        const t = state.clock.elapsedTime;
+
+        if (!idleStarted.current) {
+          idleStarted.current = true;
+          card.current.wakeUp();
+          j1.current?.wakeUp();
+          j2.current?.wakeUp();
+          j3.current?.wakeUp();
+        }
+
+        const idleY = Math.sin(t * 1.15) * 0.12;
+        const idleZ = Math.sin(t * 0.9) * 0.06;
+
+        card.current.setAngvel({
+          x: ang.x,
+          y: ang.y + idleY,
+          z: ang.z + idleZ,
+        });
+      } else {
+        idleStarted.current = false;
+      }
     }
   });
 
@@ -229,9 +301,18 @@ function Band({ isMobile, maxSpeed = 50, minSpeed = 10 }) {
     <>
       <group position={[3, 4, 0]}>
         <RigidBody ref={fixed} {...segmentProps} type="fixed" />
-        <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps}><BallCollider args={[0.1]} /></RigidBody>
-        <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps}><BallCollider args={[0.1]} /></RigidBody>
-        <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps}><BallCollider args={[0.1]} /></RigidBody>
+
+        <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps}>
+          <BallCollider args={[0.1]} />
+        </RigidBody>
+
+        <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps}>
+          <BallCollider args={[0.1]} />
+        </RigidBody>
+
+        <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps}>
+          <BallCollider args={[0.1]} />
+        </RigidBody>
 
         <RigidBody
           position={[2, 0, 0]}
@@ -248,11 +329,13 @@ function Band({ isMobile, maxSpeed = 50, minSpeed = 10 }) {
             onPointerOut={() => canDrag && hover(false)}
             onPointerUp={(e) => {
               if (!canDrag) return;
+
               e.target.releasePointerCapture(e.pointerId);
               drag(false);
             }}
             onPointerDown={(e) => {
               if (!canDrag) return;
+
               e.target.setPointerCapture(e.pointerId);
               drag(
                 new THREE.Vector3()
@@ -264,6 +347,7 @@ function Band({ isMobile, maxSpeed = 50, minSpeed = 10 }) {
             <mesh geometry={nodes.card.geometry}>
               <meshPhysicalMaterial {...materials.base} />
             </mesh>
+
             <mesh geometry={nodes.clip.geometry} material={materials.metal} />
             <mesh geometry={nodes.clamp.geometry} material={materials.metal} />
           </group>
@@ -272,6 +356,7 @@ function Band({ isMobile, maxSpeed = 50, minSpeed = 10 }) {
 
       <mesh ref={band}>
         <meshLineGeometry />
+
         <meshLineMaterial
           transparent
           opacity={0.9}
