@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import App from "@/components/band/App";
 import TextType from "@/components/band/TextType";
 
-const skills = ["TypeScript", "React.js", "Tailwind CSS"];
+const skills = ["React.js", "Node.js", "Supabase", "TypeScript"];
 
 type HeroProps = {
   showApp: boolean;
@@ -142,7 +142,7 @@ export default function Hero({ showApp }: HeroProps) {
               marginBottom: 24,
             }}
           >
-            Frontend
+            Full Stack
           </motion.h1>
         </div>
 
@@ -164,9 +164,9 @@ export default function Hero({ showApp }: HeroProps) {
             <TextType
               text={[
                 "Jack Anderson Rosales Garay",
-                "Programador Junior",
-                "Desarrollador de Software",
-                "¡Creando soluciones digitales!",
+                "Desarrollador Full Stack",
+                "Frontend, Backend y Bases de Datos",
+                "Creando soluciones digitales completas",
               ]}
               typingSpeed={75}
               pauseDuration={1500}
@@ -202,9 +202,10 @@ export default function Hero({ showApp }: HeroProps) {
               textWrap: "pretty",
             }}
           >
-               Creo soluciones web modernas enfocadas en diseño limpio, rendimiento y
-               facilidad de uso. Mi objetivo es transformar cada idea en una experiencia
-               digital funcional, visualmente atractiva y adaptable a cualquier pantalla.
+            Creo soluciones web completas, desde interfaces modernas hasta
+            lógica backend, integración de APIs y conexión con bases de datos.
+            Mi objetivo es transformar cada idea en una experiencia digital
+            funcional, atractiva, segura y adaptable a cualquier pantalla.
           </p>
         </motion.div>
 
