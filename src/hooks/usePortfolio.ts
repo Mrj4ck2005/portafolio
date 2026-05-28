@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
 import {
   fetchCertificates,
   fetchProjects,
@@ -13,29 +14,74 @@ export default function usePortfolio() {
   const [techStacks, setTechStacks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadPortfolio()
-  }, [])
-
-  const loadPortfolio = async () => {
+  const loadPortfolio = useCallback(async () => {
     setLoading(true)
 
-    const [
-      projectsData,
-      certificatesData,
-      techStacksData,
-    ] = await Promise.all([
-      fetchProjects(),
-      fetchCertificates(),
-      fetchTechStacks(),
-    ])
+    try {
+      const [
+        projectsData,
+        certificatesData,
+        techStacksData,
+      ] = await Promise.all([
+        fetchProjects(),
+        fetchCertificates(),
+        fetchTechStacks(),
+      ])
 
-    setProjects(projectsData || [])
-    setCertificates(certificatesData || [])
-    setTechStacks(techStacksData || [])
+      setProjects(projectsData || [])
+      setCertificates(certificatesData || [])
+      setTechStacks(techStacksData || [])
+    } catch (error) {
+      console.error('Error cargando portafolio:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-    setLoading(false)
-  }
+  useEffect(() => {
+    loadPortfolio()
+
+    const channel = supabase
+      .channel('portfolio-public-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'projects',
+        },
+        () => {
+          loadPortfolio()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'certificates',
+        },
+        () => {
+          loadPortfolio()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tech_stack',
+        },
+        () => {
+          loadPortfolio()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [loadPortfolio])
 
   return {
     projects,
