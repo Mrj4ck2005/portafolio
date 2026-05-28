@@ -68,7 +68,7 @@ export default function LoginPage() {
             </div>
 
             <h1 className="text-2xl font-bold text-white">
-              Inicio de sesión administrador
+              Admin
             </h1>
 
             <p className="text-sm text-white/40 mt-2">
