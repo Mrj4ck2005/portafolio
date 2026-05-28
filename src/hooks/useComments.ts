@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import {
   fetchCommentsService,
@@ -13,11 +13,20 @@ export default function useComments() {
   const [comments, setComments] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
+  const fetchInitialComments = useCallback(async () => {
+    try {
+      const data = await fetchCommentsService()
+      setComments(data || [])
+    } catch (err) {
+      console.error('Error cargando comentarios:', err)
+    }
+  }, [])
+
   useEffect(() => {
     fetchInitialComments()
 
     const channel = supabase
-      .channel('comments-live')
+      .channel('comments-public-realtime')
       .on(
         'postgres_changes',
         {
@@ -26,8 +35,7 @@ export default function useComments() {
           table: 'comments',
         },
         async () => {
-          const data = await fetchCommentsService()
-          setComments(data || [])
+          await fetchInitialComments()
         }
       )
       .subscribe()
@@ -35,16 +43,7 @@ export default function useComments() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [])
-
-  const fetchInitialComments = async () => {
-    try {
-      const data = await fetchCommentsService()
-      setComments(data || [])
-    } catch (err) {
-      console.log(err)
-    }
-  }
+  }, [fetchInitialComments])
 
   const addComment = async ({
     name,
@@ -74,10 +73,18 @@ export default function useComments() {
       })
 
       if (newComment) {
-        setComments((prev) => [newComment, ...prev])
+        setComments((prev) => {
+          const exists = prev.some(
+            (item) => item.id === newComment.id
+          )
+
+          if (exists) return prev
+
+          return [newComment, ...prev]
+        })
       }
     } catch (err) {
-      console.log(err)
+      console.error('Error agregando comentario:', err)
     } finally {
       setLoading(false)
     }
@@ -110,7 +117,7 @@ export default function useComments() {
         )
       )
     } catch (err) {
-      console.log(err)
+      console.error('Error dando corazón:', err)
     }
   }
 
