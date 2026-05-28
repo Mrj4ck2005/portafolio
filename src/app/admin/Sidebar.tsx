@@ -9,6 +9,7 @@ import {
   Layers,
   Menu,
   X,
+  Mail,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,6 +41,11 @@ export default function Sidebar() {
       name: "Comentarios",
       icon: MessageSquare,
       path: "/admin/comments",
+    },
+    {
+      name: "Mensajes",
+      icon: Mail,
+      path: "/admin/messages",
     },
     {
       name: "Tecnologías",
