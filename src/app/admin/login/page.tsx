@@ -29,7 +29,7 @@ export default function LoginPage() {
     setSuccessMsg("");
 
     if (!email || !password) {
-      setErrorMsg("Please fill email and password");
+      setErrorMsg("Completa el correo y la contraseña");
       return;
     }
 
@@ -43,9 +43,9 @@ export default function LoginPage() {
     setLoading(false);
 
     if (error) {
-      setErrorMsg("Invalid email or password");
+      setErrorMsg("Correo o contraseña incorrectos");
     } else {
-      setSuccessMsg("Login success, redirecting...");
+      setSuccessMsg("Inicio de sesión correcto, redirigiendo...");
       setTimeout(() => {
         router.push("/admin/dashboard");
       }, 800);
@@ -68,11 +68,11 @@ export default function LoginPage() {
             </div>
 
             <h1 className="text-2xl font-bold text-white">
-              Admin Login
+              Inicio de sesión administrador
             </h1>
 
             <p className="text-sm text-white/40 mt-2">
-              Login to access dashboard panel
+              Ingresa para acceder al panel de administración
             </p>
           </div>
 
@@ -93,7 +93,7 @@ export default function LoginPage() {
           {/* EMAIL */}
           <div className="mb-4">
             <label className="text-sm text-white/50 mb-2 block">
-              Email
+              Correo electrónico
             </label>
 
             <div className="relative">
@@ -104,7 +104,7 @@ export default function LoginPage() {
 
               <input
                 type="email"
-                placeholder="masukan email"
+                placeholder="Ingresa tu correo"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full h-[56px] rounded-2xl bg-[#0c0c0c] border border-white/10 pl-12 pr-4 text-white outline-none focus:border-white/20 transition"
@@ -115,7 +115,7 @@ export default function LoginPage() {
           {/* PASSWORD */}
           <div className="mb-6">
             <label className="text-sm text-white/50 mb-2 block">
-              Password
+              Contraseña
             </label>
 
             <div className="relative">
@@ -126,7 +126,7 @@ export default function LoginPage() {
 
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="masukan password"
+                placeholder="Ingresa tu contraseña"
                 value={password}
                 onChange={(e) =>
                   setPassword(e.target.value)
@@ -162,10 +162,10 @@ export default function LoginPage() {
                   size={18}
                   className="animate-spin"
                 />
-                Signing In...
+                Iniciando sesión...
               </>
             ) : (
-              "Login"
+              "Ingresar"
             )}
           </button>
         </div>
