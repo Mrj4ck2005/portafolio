@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, Variants } from "framer-motion";
 import { Code, Award, Globe, FileText, ArrowUpRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -64,6 +64,35 @@ export default function About() {
   const [certificateCount, setCertificateCount] = useState(0);
   const [techCount, setTechCount] = useState(0);
 
+  const fetchStats = useCallback(async () => {
+    try {
+      const [{ count: projects }, { count: certificates }, { count: technologies }] =
+        await Promise.all([
+          supabase
+            .from("projects")
+            .select("*", { count: "exact", head: true }),
+
+          supabase
+            .from("certificates")
+            .select("*", { count: "exact", head: true }),
+
+          supabase
+            .from("tech_stack")
+            .select("*", { count: "exact", head: true }),
+        ]);
+
+      setProjectCount(projects || 0);
+      setCertificateCount(certificates || 0);
+      setTechCount(technologies || 0);
+    } catch (error) {
+      console.error("Error actualizando contadores:", error);
+
+      setProjectCount(0);
+      setCertificateCount(0);
+      setTechCount(0);
+    }
+  }, []);
+
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
 
@@ -72,32 +101,48 @@ export default function About() {
 
     fetchStats();
 
-    return () => window.removeEventListener("resize", check);
-  }, []);
+    const channel = supabase
+      .channel("about-stats-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "projects",
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "certificates",
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "tech_stack",
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .subscribe();
 
-  const fetchStats = async () => {
-    try {
-      const { count: projects } = await supabase
-        .from("projects")
-        .select("*", { count: "exact", head: true });
-
-      const { count: certificates } = await supabase
-        .from("certificates")
-        .select("*", { count: "exact", head: true });
-
-      const { count: technologies } = await supabase
-        .from("tech_stack")
-        .select("*", { count: "exact", head: true });
-
-      setProjectCount(projects || 0);
-      setCertificateCount(certificates || 0);
-      setTechCount(technologies || 0);
-    } catch {
-      setProjectCount(0);
-      setCertificateCount(0);
-      setTechCount(0);
-    }
-  };
+    return () => {
+      window.removeEventListener("resize", check);
+      supabase.removeChannel(channel);
+    };
+  }, [fetchStats]);
 
   const scrollToPortfolio = (
     tab: "projects" | "certificates" | "techstack"
@@ -217,10 +262,9 @@ export default function About() {
                 maxWidth: isMobile ? "100%" : "490px",
               }}
             >
-              Me apasiona crear soluciones digitales modernas,
-              combinando diseño, tecnología e interfaces limpias para construir
-              proyectos funcionales, atractivos y orientados a necesidades
-              reales.
+              Me apasiona crear soluciones digitales modernas, combinando
+              diseño, tecnología e interfaces limpias para construir proyectos
+              funcionales, atractivos y orientados a necesidades reales.
             </motion.p>
 
             {/* FRASE */}
