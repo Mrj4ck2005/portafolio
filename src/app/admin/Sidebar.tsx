@@ -10,16 +10,20 @@ import {
   Menu,
   X,
   Mail,
+  LogOut,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const menus = [
     {
@@ -70,6 +74,17 @@ export default function Sidebar() {
     setOpen(false);
   }, [pathname]);
 
+  const handleLogout = async () => {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+
+    await supabase.auth.signOut();
+
+    router.replace("/admin/login");
+    router.refresh();
+  };
+
   const SidebarContent = ({
     hideTitle = false,
   }: {
@@ -90,11 +105,7 @@ export default function Sidebar() {
             const active = pathname === menu.path;
 
             return (
-              <Link
-                key={i}
-                href={menu.path}
-                className="block"
-              >
+              <Link key={i} href={menu.path} className="block">
                 <motion.div
                   whileHover={{
                     x: 6,
@@ -112,12 +123,10 @@ export default function Sidebar() {
                       : "text-white/60 hover:text-white"
                   }`}
                 >
-                  {/* Hover Glow */}
                   {!active && (
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 rounded-xl bg-gradient-to-r from-white/[0.06] to-transparent" />
                   )}
 
-                  {/* Active Bar */}
                   {active && (
                     <motion.div
                       layoutId="activeSidebar"
@@ -130,7 +139,6 @@ export default function Sidebar() {
                     />
                   )}
 
-                  {/* Icon */}
                   <motion.div
                     whileHover={{ rotate: -6 }}
                     transition={{
@@ -142,7 +150,6 @@ export default function Sidebar() {
                     <Icon size={17} />
                   </motion.div>
 
-                  {/* Text */}
                   <span className="relative z-10 text-sm font-medium tracking-wide">
                     {menu.name}
                   </span>
@@ -154,8 +161,19 @@ export default function Sidebar() {
       </div>
 
       {/* BOTTOM */}
-      <div className="text-xs text-white/35 tracking-wide">
-        © 2026 Administración
+      <div className="space-y-4">
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-300 border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 transition disabled:opacity-60"
+        >
+          <LogOut size={17} />
+          {loggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+        </button>
+
+        <div className="text-xs text-white/35 tracking-wide">
+          © 2026 Administración
+        </div>
       </div>
     </>
   );
